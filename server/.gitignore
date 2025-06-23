@@ -1,0 +1,11 @@
+# Miscellaneous
+/.vs
+/Expense.Tracker.Server/.vs
+.vs/
+**/.vs/
+
+# ignore build output directories
+bin/
+obj/
+**/bin/
+**/obj/
