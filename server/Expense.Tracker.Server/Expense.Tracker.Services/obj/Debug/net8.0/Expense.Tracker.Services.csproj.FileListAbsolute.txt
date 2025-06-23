@@ -1,0 +1,16 @@
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\bin\Debug\net8.0\Expense.Tracker.Services.deps.json
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\bin\Debug\net8.0\Expense.Tracker.Services.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\bin\Debug\net8.0\Expense.Tracker.Services.pdb
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.GeneratedMSBuildEditorConfig.editorconfig
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.AssemblyInfoInputs.cache
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.AssemblyInfo.cs
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.csproj.CoreCompileInputs.cache
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.sourcelink.json
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\refint\Expense.Tracker.Services.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.pdb
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\ref\Expense.Tracker.Services.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\bin\Debug\net8.0\Expense.Tracker.Services.Abstractions.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\bin\Debug\net8.0\Expense.Tracker.Services.Abstractions.pdb
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense.Tracker.Services.csproj.AssemblyReference.cache
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services\obj\Debug\net8.0\Expense..ACF1D14D.Up2Date

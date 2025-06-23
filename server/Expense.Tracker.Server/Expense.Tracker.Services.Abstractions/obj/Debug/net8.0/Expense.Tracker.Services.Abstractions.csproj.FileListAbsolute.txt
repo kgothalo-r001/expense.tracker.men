@@ -1,0 +1,12 @@
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\bin\Debug\net8.0\Expense.Tracker.Services.Abstractions.deps.json
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\bin\Debug\net8.0\Expense.Tracker.Services.Abstractions.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\bin\Debug\net8.0\Expense.Tracker.Services.Abstractions.pdb
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.GeneratedMSBuildEditorConfig.editorconfig
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.AssemblyInfoInputs.cache
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.AssemblyInfo.cs
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.csproj.CoreCompileInputs.cache
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.sourcelink.json
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\refint\Expense.Tracker.Services.Abstractions.dll
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\Expense.Tracker.Services.Abstractions.pdb
+C:\personal\expense.tracker.men\server\Expense.Tracker.Server\Expense.Tracker.Services.Abstractions\obj\Debug\net8.0\ref\Expense.Tracker.Services.Abstractions.dll
