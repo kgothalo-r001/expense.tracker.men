@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Compiled output
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.d.ts.map

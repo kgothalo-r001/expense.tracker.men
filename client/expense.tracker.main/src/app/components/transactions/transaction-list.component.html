@@ -1,0 +1,183 @@
+<div class="transaction-list-container">
+  <header class="list-header">
+    <h2>Transactions</h2>
+    <button class="btn btn-primary" type="button">
+      <span>+</span> Add Transaction
+    </button>
+  </header>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label for="type-filter">Type:</label>
+        <select 
+          id="type-filter"
+          [(ngModel)]="selectedType" 
+          (change)="onFilterChange()"
+          class="form-select"
+        >
+          <option value="ALL">All Types</option>
+          <option *ngFor="let type of transactionTypes" [value]="type">
+            {{ type }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="start-date">From:</label>
+        <input 
+          id="start-date"
+          type="date" 
+          [(ngModel)]="startDate" 
+          (change)="onFilterChange()"
+          class="form-input"
+        >
+      </div>
+
+      <div class="filter-group">
+        <label for="end-date">To:</label>
+        <input 
+          id="end-date"
+          type="date" 
+          [(ngModel)]="endDate" 
+          (change)="onFilterChange()"
+          class="form-input"
+        >
+      </div>
+
+      <div class="filter-group">
+        <label for="search">Search:</label>
+        <input 
+          id="search"
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="onFilterChange()"
+          placeholder="Search transactions..."
+          class="form-input"
+        >
+      </div>
+
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="clearFilters()"
+      >
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-message" *ngIf="error$ | async as error">
+    <div class="alert alert-error">
+      <span class="error-icon">⚠️</span>
+      {{ error }}
+      <button 
+        type="button" 
+        class="btn-close" 
+        (click)="clearFilters()"
+        aria-label="Close"
+      >×</button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading$ | async">
+    <div class="loading-spinner"></div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- Transaction List -->
+  <div class="transactions-grid" *ngIf="transactions$ | async as transactions">
+    <div class="grid-header">
+      <div class="header-cell">Date</div>
+      <div class="header-cell">Description</div>
+      <div class="header-cell">Category</div>
+      <div class="header-cell">Type</div>
+      <div class="header-cell">Amount</div>
+      <div class="header-cell">Tags</div>
+      <div class="header-cell">Actions</div>
+    </div>
+
+    <div 
+      class="transaction-row" 
+      *ngFor="let transaction of transactions; trackBy: trackByTransactionId"
+    >
+      <div class="cell date-cell">
+        {{ transaction.date | date:'shortDate' }}
+      </div>
+      
+      <div class="cell description-cell">
+        <div class="description-content">
+          <span class="description">{{ transaction.description }}</span>
+          <span class="notes" *ngIf="transaction.notes">{{ transaction.notes }}</span>
+        </div>
+      </div>
+      
+      <div class="cell category-cell">
+        <span class="category-badge">{{ transaction.categoryName || 'Uncategorized' }}</span>
+      </div>
+      
+      <div class="cell type-cell">
+        <span 
+          class="type-badge" 
+          [class]="transaction.type.toLowerCase()"
+        >
+          {{ transaction.type }}
+        </span>
+      </div>
+      
+      <div class="cell amount-cell">
+        <span 
+          class="amount" 
+          [class]="transaction.type.toLowerCase()"
+        >
+          {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency }}
+        </span>
+      </div>
+      
+      <div class="cell tags-cell">
+        <div class="tags-container">
+          <span 
+            class="tag" 
+            *ngFor="let tag of transaction.tags"
+          >
+            #{{ tag }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="cell actions-cell">
+        <div class="action-buttons">
+          <button 
+            type="button"
+            class="btn btn-icon btn-edit" 
+            (click)="onEditTransaction(transaction)"
+            title="Edit transaction"
+          >
+            ✏️
+          </button>
+          <button 
+            type="button"
+            class="btn btn-icon btn-delete" 
+            (click)="onDeleteTransaction(transaction.id)"
+            title="Delete transaction"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="transactions.length === 0">
+      <div class="empty-icon">📝</div>
+      <h3>No transactions found</h3>
+      <p>Add your first transaction to get started!</p>
+      <button class="btn btn-primary" type="button">
+        Add Transaction
+      </button>
+    </div>
+  </div>
+</div>
