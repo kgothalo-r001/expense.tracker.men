@@ -8,10 +8,12 @@
 
 # Node
 /node_modules
+**/node_modules
 /.vscode
 /auto
 npm-debug.log
 yarn-error.log
+package-lock.json
 
 # IDEs and editors
 .idea/

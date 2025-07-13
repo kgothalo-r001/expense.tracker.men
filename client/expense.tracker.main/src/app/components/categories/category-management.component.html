@@ -1,0 +1,256 @@
+<div class="category-management-container">
+  <header class="management-header">
+    <h2>Category Management</h2>
+    <button 
+      class="btn btn-primary" 
+      type="button"
+      (click)="onAddCategory()"
+      *ngIf="!isAddingCategory"
+    >
+      <span>+</span> Add Category
+    </button>
+  </header>
+
+  <!-- Error State -->
+  <div class="error-message" *ngIf="error$ | async as error">
+    <div class="alert alert-error">
+      <span class="error-icon">⚠️</span>
+      {{ error }}
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading$ | async">
+    <div class="loading-spinner"></div>
+    <p>Loading categories...</p>
+  </div>
+
+  <!-- Add Category Form -->
+  <div class="add-category-form" *ngIf="isAddingCategory">
+    <div class="form-card">
+      <h3>Add New Category</h3>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-category-name">Name *</label>
+          <input
+            id="new-category-name"
+            type="text"
+            [(ngModel)]="newCategoryName"
+            class="form-input"
+            placeholder="Enter category name"
+            maxlength="50"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="new-category-type">Type *</label>
+          <select
+            id="new-category-type"
+            [(ngModel)]="newCategoryType"
+            class="form-select"
+          >
+            <option *ngFor="let type of categoryTypes" [value]="type">
+              {{ type }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="new-category-description">Description</label>
+        <textarea
+          id="new-category-description"
+          [(ngModel)]="newCategoryDescription"
+          class="form-textarea"
+          placeholder="Enter category description"
+          rows="3"
+          maxlength="200"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Color</label>
+        <div class="color-picker">
+          <div 
+            class="color-option"
+            *ngFor="let color of predefinedColors"
+            [style.background-color]="color"
+            [class.selected]="newCategoryColor === color"
+            (click)="newCategoryColor = color"
+          ></div>
+          <input
+            type="color"
+            [(ngModel)]="newCategoryColor"
+            class="color-input"
+            title="Custom color"
+          >
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancelAddCategory()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onSaveNewCategory()"
+          [disabled]="!newCategoryName.trim()"
+        >
+          Add Category
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Grid -->
+  <div class="categories-grid" *ngIf="categories$ | async as categories">
+    <div 
+      class="category-card" 
+      *ngFor="let category of categories; trackBy: trackByCategoryId"
+    >
+      <!-- View Mode -->
+      <div class="category-view" *ngIf="editingCategory?.id !== category.id">
+        <div class="category-header">
+          <div class="category-info">
+            <div 
+              class="category-color" 
+              [style.background-color]="category.color"
+            ></div>
+            <div class="category-details">
+              <h4 class="category-name">{{ category.name }}</h4>
+              <span class="category-type" [class]="category.type.toLowerCase()">
+                {{ category.type }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="category-actions" *ngIf="!category.isDefault">
+            <button
+              type="button"
+              class="btn btn-icon btn-edit"
+              (click)="onEditCategory(category)"
+              title="Edit category"
+            >
+              ✏️
+            </button>
+            <button
+              type="button"
+              class="btn btn-icon btn-delete"
+              (click)="onDeleteCategory(category.id)"
+              title="Delete category"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+
+        <p class="category-description" *ngIf="category.description">
+          {{ category.description }}
+        </p>
+
+        <div class="category-metadata">
+          <span class="created-date">
+            Created: {{ category.createdAt | date:'shortDate' }}
+          </span>
+          <span class="default-badge" *ngIf="category.isDefault">
+            Default
+          </span>
+        </div>
+      </div>
+
+      <!-- Edit Mode -->
+      <div class="category-edit" *ngIf="editingCategory?.id === category.id">
+        <div class="form-group">
+          <label>Name *</label>
+          <input
+            type="text"
+            [(ngModel)]="editingCategory.name"
+            class="form-input"
+            placeholder="Enter category name"
+            maxlength="50"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Type *</label>
+          <select
+            [(ngModel)]="editingCategory.type"
+            class="form-select"
+          >
+            <option *ngFor="let type of categoryTypes" [value]="type">
+              {{ type }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea
+            [(ngModel)]="editingCategory.description"
+            class="form-textarea"
+            placeholder="Enter category description"
+            rows="2"
+            maxlength="200"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Color</label>
+          <div class="color-picker">
+            <div 
+              class="color-option"
+              *ngFor="let color of predefinedColors"
+              [style.background-color]="color"
+              [class.selected]="editingCategory.color === color"
+              (click)="editingCategory.color = color"
+            ></div>
+            <input
+              type="color"
+              [(ngModel)]="editingCategory.color"
+              class="color-input"
+              title="Custom color"
+            >
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="cancelEditCategory()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="onSaveEditCategory()"
+            [disabled]="!editingCategory.name?.trim()"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="categories.length === 0">
+      <div class="empty-icon">🏷️</div>
+      <h3>No categories found</h3>
+      <p>Create your first category to start organizing your transactions!</p>
+      <button 
+        class="btn btn-primary" 
+        type="button"
+        (click)="onAddCategory()"
+      >
+        Add Category
+      </button>
+    </div>
+  </div>
+</div>

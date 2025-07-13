@@ -1,0 +1,30 @@
+{
+  "name": "@expense-tracker/abstractions",
+  "version": "1.0.0",
+  "description": "Shared models, interfaces, and constants for the expense tracker application",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "typescript",
+    "models",
+    "abstractions",
+    "expense-tracker"
+  ],
+  "author": "Expense Tracker Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "~5.7.2",
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  }
+}

@@ -1,0 +1,97 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1>Expense Tracker Dashboard</h1>
+    <div class="date-range-selector">
+      <!-- Date range selector will be implemented later -->
+    </div>
+  </header>
+
+  <div class="dashboard-content" *ngIf="dashboardSummary$ | async as summary">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card income">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+          <h3>Total Income</h3>
+          <p class="amount">{{ summary.totalIncome | currency }}</p>
+        </div>
+      </div>
+
+      <div class="summary-card expenses">
+        <div class="card-icon">💸</div>
+        <div class="card-content">
+          <h3>Total Expenses</h3>
+          <p class="amount">{{ summary.totalExpenses | currency }}</p>
+        </div>
+      </div>
+
+      <div class="summary-card balance">
+        <div class="card-icon">📊</div>
+        <div class="card-content">
+          <h3>Net Balance</h3>
+          <p class="amount" [class.negative]="summary.netBalance < 0">
+            {{ summary.netBalance | currency }}
+          </p>
+        </div>
+      </div>
+
+      <div class="summary-card transactions">
+        <div class="card-icon">📝</div>
+        <div class="card-content">
+          <h3>Transactions</h3>
+          <p class="amount">{{ summary.transactionCount }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="category-breakdown">
+      <h2>Spending by Category</h2>
+      <div class="category-list">
+        <div 
+          class="category-item" 
+          *ngFor="let category of summary.categoryBreakdown"
+        >
+          <div class="category-info">
+            <span class="category-name">{{ category.name }}</span>
+            <span class="category-amount">{{ category.amount | currency }}</span>
+          </div>
+          <div class="category-bar">
+            <div 
+              class="category-fill" 
+              [style.width.%]="(category.amount / summary.totalExpenses) * 100"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="recent-transactions">
+      <h2>Recent Transactions</h2>
+      <div class="transaction-list">
+        <div 
+          class="transaction-item" 
+          *ngFor="let transaction of summary.recentTransactions"
+        >
+          <div class="transaction-info">
+            <span class="transaction-description">{{ transaction.description }}</span>
+            <span class="transaction-category">{{ transaction.categoryName }}</span>
+          </div>
+          <div class="transaction-amount" [class]="transaction.type.toLowerCase()">
+            {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency }}
+          </div>
+          <div class="transaction-date">
+            {{ transaction.date | date:'shortDate' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="!(dashboardSummary$ | async)">
+    <div class="loading-spinner"></div>
+    <p>Loading dashboard data...</p>
+  </div>
+</div>

@@ -1,0 +1,239 @@
+/* ============================================
+   APP LAYOUT STYLES
+   ============================================ */
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.app-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-xl);
+  gap: var(--spacing-md);
+  
+  @media (max-width: 768px) {
+    padding: var(--spacing-md);
+    flex-wrap: wrap;
+  }
+}
+
+.brand {
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+}
+
+.main-nav {
+  display: flex;
+  gap: var(--spacing-sm);
+  
+  @media (max-width: 768px) {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: var(--spacing-sm);
+  }
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-base);
+  position: relative;
+  
+  &:hover {
+    color: var(--color-primary);
+    background-color: var(--color-surface-secondary);
+    transform: translateY(-1px);
+  }
+  
+  &.active {
+    color: var(--color-primary);
+    background-color: var(--color-primary-light);
+    font-weight: var(--font-weight-semibold);
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50%;
+      height: 2px;
+      background-color: var(--color-primary);
+      border-radius: var(--radius-full);
+    }
+  }
+  
+  @media (max-width: 640px) {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  
+  @media (max-width: 768px) {
+    order: 2;
+  }
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  
+  @media (max-width: 768px) {
+    padding: var(--spacing-md);
+  }
+}
+
+.app-footer {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-lg);
+  margin-top: auto;
+  
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    
+    .brand h1 {
+      font-size: var(--font-size-xl);
+    }
+  }
+  
+  .main-nav {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    order: unset;
+    margin-top: 0;
+  }
+  
+  .header-actions {
+    order: unset;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   LOADING AND ANIMATION STATES
+   ============================================ */
+
+.nav-link {
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Focus styles for accessibility */
+.nav-link:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  
+  @media (max-width: 768px) {
+    padding: var(--spacing-md);
+  }
+}
+
+.app-footer {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-lg);
+  margin-top: auto;
+  
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 640px) {
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    
+    .brand h1 {
+      font-size: var(--font-size-xl);
+    }
+  }
+  
+  .main-nav {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    order: unset;
+    margin-top: 0;
+  }
+  
+  .header-actions {
+    order: unset;
+    width: 100%;
+    justify-content: center;
+  }
+}
