@@ -26,7 +26,8 @@ export const CURRENCY_SYMBOLS = {
   GBP: '£',
   JPY: '¥',
   CAD: 'C$',
-  AUD: 'A$'
+  AUD: 'A$',
+  ZAR: 'R'
 };
 
 export const DATE_FORMATS = {

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest, map, catchError, of, switchMap, tap } from 'rxjs';
-import { Transaction, LoadingState, LOADING_STATES } from '@expense-tracker/abstractions';
+import { Transaction } from '../auto/autobusinessclient';
+import { LoadingState, LOADING_STATES } from '../constants';
 import { TransactionService } from '../services';
 
 interface TransactionState {
@@ -57,11 +58,11 @@ export class TransactionStateService {
     
     const filters = this.state$.value.filters;
     
-    this.transactionService.getTransactions(filters).pipe(
-      tap(response => {
+    this.transactionService.getTransactions(filters.categoryId, filters.startDate, filters.endDate).pipe(
+      tap(transactions => {
         this.updateState({
-          transactions: response.transactions,
-          total: response.total,
+          transactions: transactions,
+          total: transactions.length,
           loadingState: LOADING_STATES.SUCCESS,
           error: null
         });

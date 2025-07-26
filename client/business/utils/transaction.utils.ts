@@ -1,7 +1,7 @@
-import { Transaction, TransactionType } from '@expense-tracker/abstractions';
+import { Transaction, TransactionType, TransactionType2 } from '../auto/autobusinessclient';
 
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currency: string = 'ZAR'): string {
+  return new Intl.NumberFormat('en-ZA', {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: 2,
@@ -31,7 +31,7 @@ export function formatDate(date: Date, format: 'short' | 'medium' | 'long' = 'me
 
 export function calculateNetAmount(transactions: Transaction[]): number {
   return transactions.reduce((total, transaction) => {
-    if (transaction.type === TransactionType.INCOME) {
+    if (transaction.type === TransactionType2.INCOME) {
       return total + transaction.amount;
     } else {
       return total - transaction.amount;
@@ -41,7 +41,7 @@ export function calculateNetAmount(transactions: Transaction[]): number {
 
 export function groupTransactionsByDate(transactions: Transaction[]): { [date: string]: Transaction[] } {
   return transactions.reduce((groups, transaction) => {
-    const dateKey = formatDate(transaction.date, 'medium');
+    const dateKey = transaction.date ? formatDate(transaction.date, 'medium') : 'Unknown Date';
     if (!groups[dateKey]) {
       groups[dateKey] = [];
     }
@@ -56,6 +56,7 @@ export function filterTransactionsByDateRange(
   endDate: Date
 ): Transaction[] {
   return transactions.filter(transaction => {
+    if (!transaction.date) return false;
     const transactionDate = new Date(transaction.date);
     return transactionDate >= startDate && transactionDate <= endDate;
   });

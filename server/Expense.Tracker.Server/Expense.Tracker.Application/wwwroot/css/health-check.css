@@ -1,0 +1,42 @@
+/* Health Check Styles for Swagger UI */
+.health-check-btn:hover {
+    background-color: #41b883 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(73, 204, 144, 0.3);
+}
+
+.health-check-overlay {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.health-check-modal {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close-btn:hover {
+    color: #333 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .health-check-modal {
+        width: 95% !important;
+        margin: 10px !important;
+    }
+    
+    .health-check-btn {
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
+}

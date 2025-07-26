@@ -1,7 +1,7 @@
 <div class="transaction-list-container">
   <header class="list-header">
     <h2>Transactions</h2>
-    <button class="btn btn-primary" type="button">
+    <button class="btn btn-primary" type="button" (click)="onAddTransaction()">
       <span>+</span> Add Transaction
     </button>
   </header>
@@ -133,7 +133,7 @@
           class="amount" 
           [class]="transaction.type.toLowerCase()"
         >
-          {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency }}
+          {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}
         </span>
       </div>
       
@@ -175,9 +175,26 @@
       <div class="empty-icon">📝</div>
       <h3>No transactions found</h3>
       <p>Add your first transaction to get started!</p>
-      <button class="btn btn-primary" type="button">
+      <button class="btn btn-primary" type="button" (click)="onAddTransaction()">
         Add Transaction
       </button>
     </div>
   </div>
 </div>
+
+<!-- Transaction Modal (Add/Edit) -->
+<app-transaction-modal
+  [transaction]="selectedTransaction"
+  [isVisible]="showTransactionModal"
+  (transactionSaved)="onTransactionSaved($event)"
+  (closed)="onTransactionModalClosed()">
+</app-transaction-modal>
+
+<!-- Delete Confirmation Modal -->
+<app-delete-confirmation-modal
+  [isVisible]="showDeleteModal"
+  [transactionId]="transactionToDelete"
+  (confirmed)="onDeleteConfirmed()"
+  (cancelled)="onDeleteCancelled()"
+  (deleted)="onTransactionDeleted()">
+</app-delete-confirmation-modal>

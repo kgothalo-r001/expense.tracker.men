@@ -1,4 +1,4 @@
-import { TransactionType, RecurringFrequency } from '@expense-tracker/abstractions';
+import { TransactionType, RecurringFrequency } from '../auto/autobusinessclient';
 
 /**
  * Validates transaction amount
@@ -8,7 +8,7 @@ export function validateAmount(amount: number): string | null {
     return 'Amount must be greater than 0';
   }
   if (amount > 999999.99) {
-    return 'Amount cannot exceed $999,999.99';
+    return 'Amount cannot exceed R999,999.99';
   }
   return null;
 }
@@ -103,26 +103,26 @@ export function validateTransaction(transaction: {
   const errors: Record<string, string> = {};
   
   const amountError = validateAmount(transaction.amount);
-  if (amountError) errors.amount = amountError;
+  if (amountError) errors['amount'] = amountError;
   
   const descriptionError = validateDescription(transaction.description);
-  if (descriptionError) errors.description = descriptionError;
+  if (descriptionError) errors['description'] = descriptionError;
   
   const categoryError = validateCategory(transaction.categoryId);
-  if (categoryError) errors.categoryId = categoryError;
+  if (categoryError) errors['categoryId'] = categoryError;
   
   const dateError = validateDate(transaction.date);
-  if (dateError) errors.date = dateError;
+  if (dateError) errors['date'] = dateError;
   
   const recurringError = validateRecurring(
     transaction.isRecurring,
     transaction.recurringFrequency,
     transaction.recurringEndDate
   );
-  if (recurringError) errors.recurring = recurringError;
+  if (recurringError) errors['recurring'] = recurringError;
   
   const notesError = validateNotes(transaction.notes);
-  if (notesError) errors.notes = notesError;
+  if (notesError) errors['notes'] = notesError;
   
   return errors;
 }

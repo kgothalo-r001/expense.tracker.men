@@ -1,32 +1,60 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, Inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { 
+  IClient,
   DashboardSummary,
-  API_ENDPOINTS 
-} from '@expense-tracker/abstractions';
+  ExpenseAnalytics,
+  BudgetProjection,
+  Tag,
+  CreateTagRequest,
+  MonthlySpending,
+  CategoryTrend
+} from '../auto/autobusinessclient';
+import { ICLIENT_TOKEN } from '../index';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  private readonly baseUrl = API_ENDPOINTS.DASHBOARD;
+  constructor(@Inject(ICLIENT_TOKEN) private client: IClient) {}
 
-  constructor(private http: HttpClient) {}
+  getDashboardSummary(startDate?: Date, endDate?: Date): Observable<DashboardSummary> {
+    return this.client.getDashboardSummary(startDate, endDate);
+  }
 
-  getDashboardSummary(
-    startDate?: Date, 
-    endDate?: Date
-  ): Observable<DashboardSummary> {
-    const params: any = {};
-    
-    if (startDate) {
-      params.startDate = startDate.toISOString();
-    }
-    if (endDate) {
-      params.endDate = endDate.toISOString();
-    }
+  getExpenseAnalytics(monthsBack?: number): Observable<ExpenseAnalytics> {
+    return this.client.getExpenseAnalytics(monthsBack);
+  }
 
-    return this.http.get<DashboardSummary>(this.baseUrl, { params });
+  getBudgetProjection(): Observable<BudgetProjection> {
+    return this.client.getBudgetProjection2();
+  }
+
+  getTags(): Observable<Tag[]> {
+    return this.client.getTags();
+  }
+
+  getTag(id: string): Observable<Tag> {
+    return this.client.getTag(id);
+  }
+
+  createTag(tag: CreateTagRequest): Observable<Tag> {
+    return this.client.createTag(tag);
+  }
+
+  deleteTag(id: string): Observable<void> {
+    return this.client.deleteTag(id);
+  }
+
+  getPopularTags(limit?: number): Observable<Tag[]> {
+    return this.client.getPopularTags(limit);
+  }
+
+  getMonthlySpendingTrends(monthsBack?: number): Observable<MonthlySpending[]> {
+    return this.client.getMonthlySpendingTrends(monthsBack);
+  }
+
+  getCategoryTrends(): Observable<CategoryTrend[]> {
+    return this.client.getCategoryTrends();
   }
 }

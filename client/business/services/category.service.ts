@@ -1,39 +1,40 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, Inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
+import { 
+  IClient,
   Category,
   CreateCategoryRequest,
-  UpdateCategoryRequest,
-  API_ENDPOINTS
-} from '@expense-tracker/abstractions';
+  UpdateCategoryRequest
+} from '../auto/autobusinessclient';
+import { ICLIENT_TOKEN } from '../index';
 
 @Injectable({
   providedIn: 'root'
 })
-
 export class CategoryService {
-  private readonly baseUrl = API_ENDPOINTS.CATEGORIES;
-
-  constructor(private http: HttpClient) {}
+  constructor(@Inject(ICLIENT_TOKEN) private client: IClient) {}
 
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(this.baseUrl);
+    return this.client.getCategories();
   }
 
   getCategory(id: string): Observable<Category> {
-    return this.http.get<Category>(`${this.baseUrl}/${id}`);
+    return this.client.getCategory(id);
   }
 
   createCategory(category: CreateCategoryRequest): Observable<Category> {
-    return this.http.post<Category>(this.baseUrl, category);
+    return this.client.createCategory(category);
   }
 
-  updateCategory(category: UpdateCategoryRequest): Observable<Category> {
-    return this.http.put<Category>(`${this.baseUrl}/${category.id}`, category);
+  updateCategory(id: string, category: UpdateCategoryRequest): Observable<Category> {
+    return this.client.updateCategory(id, category);
   }
 
   deleteCategory(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.client.deleteCategory(id);
+  }
+
+  initializeDefaultCategories(): Observable<void> {
+    return this.client.initializeDefaultCategories();
   }
 }

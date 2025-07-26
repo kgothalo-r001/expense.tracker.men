@@ -2,14 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { Transaction, TransactionType } from '@abstractions/models';
+import { Transaction, TransactionType } from '@business/auto';
 import { TransactionStateService } from '@business/state';
 import { TransactionService } from '@business/services';
+import { TransactionModalComponent } from './transaction-modal.component';
+import { DeleteConfirmationModalComponent } from '../delete-confirmation-modal';
 
 @Component({
   selector: 'app-transaction-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TransactionModalComponent, DeleteConfirmationModalComponent],
   templateUrl: './transaction-list.component.html',
   styleUrl: './transaction-list.component.less'
 })
@@ -24,6 +26,13 @@ export class TransactionListComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   searchTerm: string = '';
+
+  showTransactionModal = false;
+  selectedTransaction: Transaction | null = null;
+  isEditMode = false;
+
+  showDeleteModal = false;
+  transactionToDelete: string | null = null;
 
   transactionTypes = Object.values(TransactionType);
 
@@ -64,14 +73,52 @@ export class TransactionListComponent implements OnInit {
   }
 
   onDeleteTransaction(id: string): void {
-    if (confirm('Are you sure you want to delete this transaction?')) {
-      this.transactionStateService.removeTransaction(id);
-    }
+    this.transactionToDelete = id;
+    this.showDeleteModal = true;
+  }
+
+  onDeleteConfirmed(): void {
+    this.showDeleteModal = false;
+    this.transactionToDelete = null;
+  }
+
+  onDeleteCancelled(): void {
+    this.showDeleteModal = false;
+    this.transactionToDelete = null;
+  }
+
+  onTransactionDeleted(): void {
+    this.showDeleteModal = false;
+    this.transactionToDelete = null;
+  }
+
+  onAddTransaction(): void {
+    this.selectedTransaction = null;
+    this.isEditMode = false;
+    this.showTransactionModal = true;
   }
 
   onEditTransaction(transaction: Transaction): void {
-    // Navigate to edit form or open modal
-    console.log('Edit transaction:', transaction);
+    this.selectedTransaction = transaction;
+    this.isEditMode = true;
+    this.showTransactionModal = true;
+  }
+
+  onTransactionSaved(transaction: Transaction): void {
+    if (this.isEditMode) {
+      this.transactionStateService.updateTransaction(transaction);
+    } else {
+      this.transactionStateService.addTransaction(transaction);
+    }
+    this.showTransactionModal = false;
+    this.selectedTransaction = null;
+    this.isEditMode = false;
+  }
+
+  onTransactionModalClosed(): void {
+    this.showTransactionModal = false;
+    this.selectedTransaction = null;
+    this.isEditMode = false;
   }
 
   clearFilters(): void {
@@ -84,6 +131,6 @@ export class TransactionListComponent implements OnInit {
   }
 
   trackByTransactionId(index: number, transaction: Transaction): string {
-    return transaction.id;
+    return transaction.id || index.toString();
   }
 }

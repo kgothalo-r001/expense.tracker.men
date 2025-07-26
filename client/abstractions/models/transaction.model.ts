@@ -1,5 +1,3 @@
-//Dummy file for transaction model definitions
-
 export interface Transaction {
   id: string;
   amount: number;
@@ -17,15 +15,15 @@ export interface Transaction {
 }
 
 export enum TransactionType {
-  EXPENSE = 'EXPENSE',
-  INCOME = 'INCOME'
+  EXPENSE = 0,
+  INCOME = 1
 }
 
 export enum RecurringFrequency {
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  QUARTERLY = 'QUARTERLY',
-  YEARLY = 'YEARLY'
+  WEEKLY = 0,
+  MONTHLY = 1,
+  QUARTERLY = 2,
+  YEARLY = 3
 }
 
 export interface CreateTransactionRequest {

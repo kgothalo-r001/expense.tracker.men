@@ -22,3 +22,6 @@ Thumbs.db
 
 # TypeScript
 *.d.ts.map
+
+# Generated API clients
+auto/

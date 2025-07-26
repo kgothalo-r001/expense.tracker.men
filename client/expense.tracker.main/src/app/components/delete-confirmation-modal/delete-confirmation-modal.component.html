@@ -1,0 +1,33 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="onCancel()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Confirm Delete</h2>
+    </div>
+    
+    <div class="modal-body">
+      <div class="warning-icon">⚠️</div>
+      <p>Are you sure you want to delete this transaction?</p>
+      <p class="warning-text">This action cannot be undone.</p>
+    </div>
+    
+    <div class="modal-footer">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="onCancel()"
+        [disabled]="isDeleting"
+      >
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-danger" 
+        (click)="onConfirm()"
+        [disabled]="isDeleting"
+      >
+        <span *ngIf="isDeleting" class="loading-spinner"></span>
+        {{ isDeleting ? 'Deleting...' : 'Delete Transaction' }}
+      </button>
+    </div>
+  </div>
+</div>

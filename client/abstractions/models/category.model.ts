@@ -1,5 +1,3 @@
-//Dummy file for category model definitions
-
 export interface Category {
   id: string;
   name: string;
@@ -13,9 +11,9 @@ export interface Category {
 }
 
 export enum CategoryType {
-  EXPENSE = 'EXPENSE',
-  INCOME = 'INCOME',
-  BOTH = 'BOTH'
+  EXPENSE = 0,
+  INCOME = 1,
+  BOTH = 2
 }
 
 export interface CreateCategoryRequest {

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, Input, Output, EventEmitter, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -6,10 +6,8 @@ import {
   Transaction, 
   TransactionType, 
   RecurringFrequency, 
-  Category,
-  CreateTransactionRequest,
-  UpdateTransactionRequest 
-} from '@abstractions/models';
+  Category
+} from '@business/auto';
 import { TransactionService } from '@business/services';
 import { CategoryStateService } from '@business/state';
 
@@ -20,9 +18,10 @@ import { CategoryStateService } from '@business/state';
   templateUrl: './transaction-form.component.html',
   styleUrl: './transaction-form.component.less'
 })
-export class TransactionFormComponent implements OnInit {
+export class TransactionFormComponent implements OnInit, OnChanges {
   @Input() transaction: Transaction | null = null;
   @Input() isVisible: boolean = false;
+  @Input() showModalWrapper: boolean = true; 
   @Output() transactionSaved = new EventEmitter<Transaction>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -45,11 +44,22 @@ export class TransactionFormComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.categoryStateService.loadCategories();
+    
+    // If a transaction is already provided, populate the form after categories load
+    if (this.transaction) {
+      // Wait a bit for categories to load
+      setTimeout(() => {
+        this.populateForm();
+      }, 100);
+    }
   }
 
-  ngOnChanges(): void {
-    if (this.transactionForm && this.transaction) {
-      this.populateForm();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['transaction'] && this.transactionForm && this.transaction) {
+      // Wait a bit for categories to load if needed
+      setTimeout(() => {
+        this.populateForm();
+      }, 100);
     }
   }
 
@@ -57,13 +67,13 @@ export class TransactionFormComponent implements OnInit {
     this.transactionForm = this.fb.group({
       description: ['', [Validators.required, Validators.minLength(2)]],
       amount: ['', [Validators.required, Validators.min(0.01)]],
-      type: [TransactionType.EXPENSE, Validators.required],
+      type: [TransactionType.EXPENSE, Validators.required], // EXPENSE
       categoryId: ['', Validators.required],
       date: [new Date().toISOString().split('T')[0], Validators.required],
       notes: [''],
       tags: [''],
       isRecurring: [false],
-      recurringFrequency: [RecurringFrequency.MONTHLY],
+      recurringFrequency: [RecurringFrequency.MONTHLY], // MONTHLY
       recurringEndDate: ['']
     });
 
@@ -92,15 +102,21 @@ export class TransactionFormComponent implements OnInit {
         amount: this.transaction.amount,
         type: this.transaction.type,
         categoryId: this.transaction.categoryId,
-        date: new Date(this.transaction.date).toISOString().split('T')[0],
+        date: this.transaction.date ? new Date(this.transaction.date).toISOString().split('T')[0] : '',
         notes: this.transaction.notes || '',
         tags: this.transaction.tags?.join(', ') || '',
         isRecurring: this.transaction.isRecurring || false,
-        recurringFrequency: this.transaction.recurringFrequency || RecurringFrequency.MONTHLY,
+        recurringFrequency: this.transaction.recurringFrequency || RecurringFrequency.MONTHLY, // MONTHLY
         recurringEndDate: this.transaction.recurringEndDate 
           ? new Date(this.transaction.recurringEndDate).toISOString().split('T')[0] 
           : ''
       });
+      
+      // Mark all fields as touched to trigger validation
+      this.transactionForm.markAllAsTouched();
+      
+      // Update validity to ensure proper validation state
+      this.transactionForm.updateValueAndValidity();
     }
   }
 
@@ -130,8 +146,20 @@ export class TransactionFormComponent implements OnInit {
       };
 
       const request$ = this.transaction
-        ? this.transactionService.updateTransaction({ ...transactionData, id: this.transaction.id } as UpdateTransactionRequest)
-        : this.transactionService.createTransaction(transactionData as CreateTransactionRequest);
+        ? this.transactionService.updateTransaction(
+            this.transaction.id!, 
+            { 
+              id: this.transaction.id!,
+              ...transactionData,
+              recurringFrequency: transactionData.recurringFrequency
+            }
+          )
+        : this.transactionService.createTransaction(
+            {
+              ...transactionData,
+              recurringFrequency: transactionData.recurringFrequency
+            }
+          );
 
       request$.subscribe({
         next: (transaction) => {
@@ -140,6 +168,7 @@ export class TransactionFormComponent implements OnInit {
           this.isSubmitting = false;
         },
         error: (error) => {
+          console.error('Error saving transaction:', error);
           this.errorMessage = error.message || 'Failed to save transaction';
           this.isSubmitting = false;
         }
@@ -154,10 +183,10 @@ export class TransactionFormComponent implements OnInit {
 
   private resetForm(): void {
     this.transactionForm.reset({
-      type: TransactionType.EXPENSE,
+      type: TransactionType.EXPENSE, // EXPENSE
       date: new Date().toISOString().split('T')[0],
       isRecurring: false,
-      recurringFrequency: RecurringFrequency.MONTHLY
+      recurringFrequency: RecurringFrequency.MONTHLY // MONTHLY
     });
     this.errorMessage = '';
   }

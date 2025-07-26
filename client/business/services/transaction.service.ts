@@ -1,79 +1,44 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, Inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { 
-  Transaction, 
-  CreateTransactionRequest, 
-  UpdateTransactionRequest,
-  API_ENDPOINTS 
-} from '@expense-tracker/abstractions';
+  IClient,
+  Transaction,
+  CreateTransactionRequest,
+  UpdateTransactionRequest
+} from '../auto/autobusinessclient';
+import { ICLIENT_TOKEN } from '../index';
 
 @Injectable({
   providedIn: 'root'
 })
-
-//Dummy file for transaction service definitions
 export class TransactionService {
-  private readonly baseUrl = API_ENDPOINTS.TRANSACTIONS;
+  constructor(@Inject(ICLIENT_TOKEN) private client: IClient) {}
 
-  constructor(private http: HttpClient) {}
-
-  getTransactions(params?: { 
-    page?: number; 
-    pageSize?: number; 
-    categoryId?: string; 
-    type?: string;
-    startDate?: Date;
-    endDate?: Date;
-    tags?: string[];
-  }): Observable<{ transactions: Transaction[]; total: number }> {
-    let httpParams = new HttpParams();
-    
-    if (params?.page) {
-      httpParams = httpParams.set('page', params.page.toString());
-    }
-    if (params?.pageSize) {
-      httpParams = httpParams.set('pageSize', params.pageSize.toString());
-    }
-    if (params?.categoryId) {
-      httpParams = httpParams.set('categoryId', params.categoryId);
-    }
-    if (params?.type) {
-      httpParams = httpParams.set('type', params.type);
-    }
-    if (params?.startDate) {
-      httpParams = httpParams.set('startDate', params.startDate.toISOString());
-    }
-    if (params?.endDate) {
-      httpParams = httpParams.set('endDate', params.endDate.toISOString());
-    }
-    if (params?.tags?.length) {
-      httpParams = httpParams.set('tags', params.tags.join(','));
-    }
-
-    return this.http.get<{ transactions: Transaction[]; total: number }>(
-      this.baseUrl, 
-      { params: httpParams }
-    );
+  getTransactions(categoryId?: string, startDate?: Date, endDate?: Date): Observable<Transaction[]> {
+    return this.client.getTransactions(categoryId, startDate, endDate);
   }
 
   getTransaction(id: string): Observable<Transaction> {
-    return this.http.get<Transaction>(`${this.baseUrl}/${id}`);
+    return this.client.getTransaction(id);
   }
 
   createTransaction(transaction: CreateTransactionRequest): Observable<Transaction> {
-    return this.http.post<Transaction>(this.baseUrl, transaction);
+    return this.client.createTransaction(transaction);
   }
 
-  updateTransaction(transaction: UpdateTransactionRequest): Observable<Transaction> {
-    return this.http.put<Transaction>(`${this.baseUrl}/${transaction.id}`, transaction);
+  updateTransaction(id: string, transaction: UpdateTransactionRequest): Observable<Transaction> {
+    return this.client.updateTransaction(id, transaction);
   }
 
   deleteTransaction(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+    return this.client.deleteTransaction(id);
   }
 
   getRecurringTransactions(): Observable<Transaction[]> {
-    return this.http.get<Transaction[]>(`${API_ENDPOINTS.RECURRING}`);
+    return this.client.getRecurringTransactions();
+  }
+
+  processRecurringTransactions(): Observable<void> {
+    return this.client.processRecurringTransactions();
   }
 }

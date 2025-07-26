@@ -2,7 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { Category, CategoryType } from '@abstractions/models';
+import { 
+  Category, 
+  CreateCategoryRequest, 
+  CreateCategoryRequestType,
+  UpdateCategoryRequest
+} from '@business/auto';
 import { CategoryStateService } from '@business/state';
 import { CategoryService } from '@business/services';
 
@@ -24,9 +29,9 @@ export class CategoryManagementComponent implements OnInit {
   newCategoryName = '';
   newCategoryDescription = '';
   newCategoryColor = '#3498db';
-  newCategoryType = CategoryType.EXPENSE;
+  newCategoryType = CreateCategoryRequestType.EXPENSE; // EXPENSE
 
-  categoryTypes = Object.values(CategoryType);
+  categoryTypes = Object.values(CreateCategoryRequestType);
   predefinedColors = [
     '#3498db', '#e74c3c', '#2ecc71', '#f39c12', 
     '#9b59b6', '#1abc9c', '#34495e', '#e67e22'
@@ -53,7 +58,7 @@ export class CategoryManagementComponent implements OnInit {
 
   onSaveNewCategory(): void {
     if (this.newCategoryName.trim()) {
-      const categoryData = {
+      const categoryData: CreateCategoryRequest = {
         name: this.newCategoryName.trim(),
         description: this.newCategoryDescription.trim() || undefined,
         color: this.newCategoryColor,
@@ -77,7 +82,7 @@ export class CategoryManagementComponent implements OnInit {
     this.newCategoryName = '';
     this.newCategoryDescription = '';
     this.newCategoryColor = '#3498db';
-    this.newCategoryType = CategoryType.EXPENSE;
+    this.newCategoryType = CreateCategoryRequestType.EXPENSE; // EXPENSE
   }
 
   onEditCategory(category: Category): void {
@@ -85,8 +90,16 @@ export class CategoryManagementComponent implements OnInit {
   }
 
   onSaveEditCategory(): void {
-    if (this.editingCategory && this.editingCategory.name.trim()) {
-      this.categoryService.updateCategory(this.editingCategory).subscribe({
+    if (this.editingCategory && this.editingCategory.name?.trim()) {
+      const updateRequest: UpdateCategoryRequest = {
+        id: this.editingCategory.id!,
+        name: this.editingCategory.name.trim(),
+        description: this.editingCategory.description?.trim() || undefined,
+        color: this.editingCategory.color,
+        type: this.editingCategory.type as any
+      };
+
+      this.categoryService.updateCategory(this.editingCategory.id!, updateRequest).subscribe({
         next: (category) => {
           this.categoryStateService.updateCategory(category);
           this.editingCategory = null;
@@ -116,6 +129,6 @@ export class CategoryManagementComponent implements OnInit {
   }
 
   trackByCategoryId(index: number, category: Category): string {
-    return category.id;
+    return category.id || index.toString();
   }
 }

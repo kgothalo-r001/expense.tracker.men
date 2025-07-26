@@ -1,0 +1,31 @@
+{
+  "runtime": "Net90",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../expense.tracker.main/swagger.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToTypeScriptClient": {
+      "className": "Client",
+      "generateClientInterfaces": true,
+      "generateDtoTypes": true,
+      "generateConstructorInterface": false,
+      "generateDefaultValues": false,
+      "generateCloneMethod": false,
+      "typeStyle": "Interface",
+      "template": "Angular",
+      "promiseType": "Promise",
+      "httpClass": "HttpClient",
+      "withCredentials": false,
+      "useSingletonProvider": true,
+      "injectionTokenType": "InjectionToken",
+      "baseUrlTokenName": "API_BASE_URL",
+      "exportTypes": true,
+      "nullValue": "Undefined",
+      "generateOptionalPropertiesAsNullable": false,
+      "generateNullableReferenceTypes": false,
+      "output": "auto/autobusinessclient/index.ts"
+    }
+  }
+}

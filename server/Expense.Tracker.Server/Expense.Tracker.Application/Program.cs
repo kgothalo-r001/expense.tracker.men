@@ -1,50 +1,46 @@
-using Expense.Tracker.Peer;
-using Microsoft.OpenApi.Models;
+using Expense.Tracker.Application.Extensions;
+using Expense.Tracker.Services.Abstractions.Enums;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Get the connection string from configuration
+var connectionString = builder.Configuration.GetConnectionString("PostgresConnection") 
+    ?? throw new InvalidOperationException("Connection string 'PostgresConnection' not found.");
 
-// Add controllers from Expense.Tracker.Peer assembly
-builder.Services
-    .AddControllers()
-    .AddControllersAsServices();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo()
-    {
-        Title = "Expense Tracker API",
-        Version = "1.0.0",
-        Description = "API Documentation",
-    });
-});
-
-// Add CORS policy
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAllOrigins", builder =>
-    {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
-});
+// Add services to the container using extension methods
+builder.Services.AddExpenseTrackerServices(connectionString);
+builder.Services.AddExpenseTrackerControllers();
+builder.Services.AddExpenseTrackerSwagger();
+builder.Services.AddExpenseTrackerCors();
+builder.Services.AddExpenseTrackerHealthChecks();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline to use CORS
-app.UseCors("AllowAllOrigins");
-
 // Configure the HTTP request pipeline.
+var corsPolicy = app.Environment.IsDevelopment() ? "ExpenseTrackerCorsPolicy" : "ExpenseTrackerCorsProduction";
+app.UseCors(corsPolicy);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();  
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Expense Tracker API V1");
+        c.RoutePrefix = "swagger";
+        c.DisplayRequestDuration();
+        c.EnableTryItOutByDefault();
+
+        c.InjectJavascript("/js/health-check.js");
+        c.InjectStylesheet("/css/health-check.css");
+    });
 }
 
+app.MapExpenseTrackerHealthChecks();
+
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAuthorization();
 

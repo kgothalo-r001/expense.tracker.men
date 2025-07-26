@@ -22,6 +22,9 @@
       "injectionTokenType": "InjectionToken",
       "baseUrlTokenName": "API_BASE_URL",
       "exportTypes": true,
+      "nullValue": "Undefined",
+      "generateOptionalPropertiesAsNullable": false,
+      "generateNullableReferenceTypes": false,
       "output": "auto/autoexpensetrackerclient/index.ts"
     }
   }

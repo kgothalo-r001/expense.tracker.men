@@ -19,10 +19,10 @@
     "module": "ES2022",
     "baseUrl": ".",
     "paths": {
-      "@abstractions/*": ["../abstractions/*"],
       "@business/*": ["../business/*"],
-      "@expense-tracker/abstractions": ["../abstractions"],
-      "@expense-tracker/business": ["../business"]
+      "@business/auto": ["../business/auto/autobusinessclient"],
+      "@business/services": ["../business/services"],
+      "@business/state": ["../business/state"]
     }
   },
   "angularCompilerOptions": {

@@ -13,7 +13,7 @@
         <div class="card-icon">💰</div>
         <div class="card-content">
           <h3>Total Income</h3>
-          <p class="amount">{{ summary.totalIncome | currency }}</p>
+          <p class="amount">{{ summary.totalIncome | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
       </div>
 
@@ -21,7 +21,7 @@
         <div class="card-icon">💸</div>
         <div class="card-content">
           <h3>Total Expenses</h3>
-          <p class="amount">{{ summary.totalExpenses | currency }}</p>
+          <p class="amount">{{ summary.totalExpenses | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
       </div>
 
@@ -29,8 +29,8 @@
         <div class="card-icon">📊</div>
         <div class="card-content">
           <h3>Net Balance</h3>
-          <p class="amount" [class.negative]="summary.netBalance < 0">
-            {{ summary.netBalance | currency }}
+          <p class="amount" [class.negative]="summary.netAmount! < 0">
+            {{ summary.netAmount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}
           </p>
         </div>
       </div>
@@ -46,22 +46,23 @@
 
     <!-- Category Breakdown -->
     <div class="category-breakdown">
-      <h2>Spending by Category</h2>
+      <h2>Top Spending Categories</h2>
       <div class="category-list">
         <div 
           class="category-item" 
-          *ngFor="let category of summary.categoryBreakdown"
+          *ngFor="let category of summary.topCategories"
         >
           <div class="category-info">
-            <span class="category-name">{{ category.name }}</span>
-            <span class="category-amount">{{ category.amount | currency }}</span>
+            <span class="category-name">{{ category.categoryName }}</span>
+            <span class="category-amount">{{ category.totalAmount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</span>
           </div>
           <div class="category-bar">
             <div 
               class="category-fill" 
-              [style.width.%]="(category.amount / summary.totalExpenses) * 100"
+              [style.width.%]="category.percentage"
             ></div>
           </div>
+          <span class="transaction-count">{{ category.transactionCount }} transactions</span>
         </div>
       </div>
     </div>
@@ -76,13 +77,74 @@
         >
           <div class="transaction-info">
             <span class="transaction-description">{{ transaction.description }}</span>
-            <span class="transaction-category">{{ transaction.categoryName }}</span>
+            <span class="transaction-category">{{ transaction.category?.name }}</span>
           </div>
-          <div class="transaction-amount" [class]="transaction.type.toLowerCase()">
-            {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency }}
+          <div class="transaction-amount" [class]="transaction.type?.toLowerCase()">
+            {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}
           </div>
           <div class="transaction-date">
             {{ transaction.date | date:'shortDate' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expense Analytics -->
+    <div class="analytics-section" *ngIf="expenseAnalytics$ | async as analytics">
+      <h2>Expense Analytics</h2>
+      <div class="analytics-cards">
+        <div class="analytics-card">
+          <h3>Monthly Average</h3>
+          <p class="amount">{{ analytics.monthlyAverage | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
+        </div>
+        <div class="analytics-card">
+          <h3>Yearly Projection</h3>
+          <p class="amount">{{ analytics.yearlyProjection | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Projection -->
+    <div class="budget-section" *ngIf="budgetProjection$ | async as budget">
+      <h2>Budget Projection</h2>
+      <div class="budget-cards">
+        <div class="budget-card">
+          <h3>Projected Monthly Expenses</h3>
+          <p class="amount">{{ budget.projectedMonthlyExpenses | currency }}</p>
+        </div>
+        <div class="budget-card">
+          <h3>Recommended Monthly Savings</h3>
+          <p class="amount positive">{{ budget.recommendedMonthlySavings | currency }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Spending Trends -->
+    <div class="trends-section" *ngIf="monthlySpendingTrends$ | async as trends">
+      <h2>Monthly Spending Trends</h2>
+      <div class="trends-chart">
+        <div class="trend-item" *ngFor="let trend of trends">
+          <span class="trend-month">{{ trend.month }}</span>
+          <span class="trend-amount">{{ trend.amount | currency }}</span>
+          <span class="trend-count">{{ trend.transactionCount }} transactions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Trends -->
+    <div class="category-trends-section" *ngIf="categoryTrends$ | async as categoryTrends">
+      <h2>Category Trends</h2>
+      <div class="category-trends">
+        <div class="category-trend-item" *ngFor="let trend of categoryTrends">
+          <div class="trend-info">
+            <span class="trend-category">{{ trend.categoryName }}</span>
+            <span class="trend-change" [class.positive]="trend.percentageChange! >= 0" [class.negative]="trend.percentageChange! < 0">
+              {{ trend.percentageChange! >= 0 ? '+' : '' }}{{ trend.percentageChange | number:'1.1-1' }}%
+            </span>
+          </div>
+          <div class="trend-amounts">
+            <span class="previous-amount">Previous: {{ trend.previousMonthAmount | currency }}</span>
+            <span class="current-amount">Current: {{ trend.currentMonthAmount | currency }}</span>
           </div>
         </div>
       </div>

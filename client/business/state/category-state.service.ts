@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, map, catchError, of, tap } from 'rxjs';
-import { Category, LoadingState, LOADING_STATES } from '@expense-tracker/abstractions';
+import { Category } from '../auto/autobusinessclient';
+import { LoadingState, LOADING_STATES } from '../constants';
 import { CategoryService } from '../services';
 
 interface CategoryState {

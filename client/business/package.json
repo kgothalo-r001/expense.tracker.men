@@ -8,7 +8,9 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "nswag": "nswag run nswag.json && node override.cjs",
+    "genClient": "npm run nswag"
   },
   "keywords": [
     "typescript",
@@ -33,7 +35,8 @@
     "ts-jest": "^29.0.0",
     "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0"
+    "@typescript-eslint/parser": "^6.0.0",
+    "nswag": "^14.4.0"
   },
   "peerDependencies": {
     "@angular/core": ">=19.0.0",
