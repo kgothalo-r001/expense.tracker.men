@@ -1,6 +1,6 @@
 import { Transaction, TransactionType, TransactionType2 } from '../auto/autobusinessclient';
 
-export function formatCurrency(amount: number, currency: string = 'ZAR'): string {
+export function formatCurrency(amount: number, currency: string = 'R'): string {
   return new Intl.NumberFormat('en-ZA', {
     style: 'currency',
     currency: currency,

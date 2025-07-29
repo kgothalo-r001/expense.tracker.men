@@ -133,7 +133,7 @@
           class="amount" 
           [class]="transaction.type.toLowerCase()"
         >
-          {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}
+          {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency:'R':'symbol':'1.2-2':'en-ZA' }}
         </span>
       </div>
       

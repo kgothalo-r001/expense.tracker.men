@@ -13,7 +13,7 @@
         <div class="card-icon">💰</div>
         <div class="card-content">
           <h3>Total Income</h3>
-          <p class="amount">{{ summary.totalIncome | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
+          <p class="amount">{{ summary.totalIncome | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
       </div>
 
@@ -21,7 +21,7 @@
         <div class="card-icon">💸</div>
         <div class="card-content">
           <h3>Total Expenses</h3>
-          <p class="amount">{{ summary.totalExpenses | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
+          <p class="amount">{{ summary.totalExpenses | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
       </div>
 
@@ -30,7 +30,7 @@
         <div class="card-content">
           <h3>Net Balance</h3>
           <p class="amount" [class.negative]="summary.netAmount! < 0">
-            {{ summary.netAmount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}
+            {{ summary.netAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}
           </p>
         </div>
       </div>
@@ -54,7 +54,7 @@
         >
           <div class="category-info">
             <span class="category-name">{{ category.categoryName }}</span>
-            <span class="category-amount">{{ category.totalAmount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</span>
+            <span class="category-amount">{{ category.totalAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
           </div>
           <div class="category-bar">
             <div 
@@ -80,7 +80,7 @@
             <span class="transaction-category">{{ transaction.category?.name }}</span>
           </div>
           <div class="transaction-amount" [class]="transaction.type?.toLowerCase()">
-            {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}
+            {{ transaction.type === 'INCOME' ? '+' : '-' }}{{ transaction.amount | currency:'R':'symbol':'1.2-2':'en-ZA' }}
           </div>
           <div class="transaction-date">
             {{ transaction.date | date:'shortDate' }}
@@ -95,11 +95,11 @@
       <div class="analytics-cards">
         <div class="analytics-card">
           <h3>Monthly Average</h3>
-          <p class="amount">{{ analytics.monthlyAverage | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
+          <p class="amount">{{ analytics.monthlyAverage | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
         <div class="analytics-card">
           <h3>Yearly Projection</h3>
-          <p class="amount">{{ analytics.yearlyProjection | currency:'ZAR':'symbol':'1.2-2':'en-ZA' }}</p>
+          <p class="amount">{{ analytics.yearlyProjection | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
       </div>
     </div>
@@ -110,11 +110,11 @@
       <div class="budget-cards">
         <div class="budget-card">
           <h3>Projected Monthly Expenses</h3>
-          <p class="amount">{{ budget.projectedMonthlyExpenses | currency }}</p>
+          <p class="amount">{{ budget.projectedMonthlyExpenses | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
         <div class="budget-card">
           <h3>Recommended Monthly Savings</h3>
-          <p class="amount positive">{{ budget.recommendedMonthlySavings | currency }}</p>
+          <p class="amount positive">{{ budget.recommendedMonthlySavings | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
         </div>
       </div>
     </div>
@@ -125,7 +125,7 @@
       <div class="trends-chart">
         <div class="trend-item" *ngFor="let trend of trends">
           <span class="trend-month">{{ trend.month }}</span>
-          <span class="trend-amount">{{ trend.amount | currency }}</span>
+          <span class="trend-amount">{{ trend.amount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
           <span class="trend-count">{{ trend.transactionCount }} transactions</span>
         </div>
       </div>
@@ -143,8 +143,8 @@
             </span>
           </div>
           <div class="trend-amounts">
-            <span class="previous-amount">Previous: {{ trend.previousMonthAmount | currency }}</span>
-            <span class="current-amount">Current: {{ trend.currentMonthAmount | currency }}</span>
+            <span class="previous-amount">Previous: {{ trend.previousMonthAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
+            <span class="current-amount">Current: {{ trend.currentMonthAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
           </div>
         </div>
       </div>
