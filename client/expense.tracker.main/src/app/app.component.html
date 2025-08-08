@@ -1,6 +1,5 @@
-<div class="app-container">
-  <!-- Navigation Header -->
-  <header class="app-header">
+<div class="app-container" [class.auth-page]="isAuthPage">
+  <header class="app-header" *ngIf="!isAuthPage">
     <div class="header-content">
       <div class="brand">
         <h1>💰 {{ title }}</h1>
@@ -30,20 +29,46 @@
         </a>
       </nav>
       
-      <!-- Theme Toggle -->
+      <!-- User Actions & Theme Toggle -->
       <div class="header-actions">
         <app-theme-toggle></app-theme-toggle>
+        
+        <!-- User Menu -->
+        <div class="user-menu" *ngIf="currentUser">
+          <button class="user-button" (click)="toggleUserMenu()">
+            <span class="user-avatar">👤</span>
+            <span class="user-name">{{ getUserDisplayName() }}</span>
+            <span class="menu-arrow" [class.open]="showUserMenu">▼</span>
+          </button>
+          
+          <div class="user-dropdown" [class.show]="showUserMenu" (click)="$event.stopPropagation()">
+            <a 
+              routerLink="/account" 
+              class="dropdown-item"
+              (click)="showUserMenu = false"
+            >
+              ⚙️ Account Settings
+            </a>
+            <button 
+              class="dropdown-item sign-out" 
+              (click)="signOut()"
+            >
+              🚪 Sign Out
+            </button>
+          </div>
+          
+          <div class="menu-backdrop" [class.show]="showUserMenu" (click)="showUserMenu = false"></div>
+        </div>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="main-content">
+  <main class="main-content" [class.auth-layout]="isAuthPage">
     <router-outlet></router-outlet>
   </main>
 
-  <!-- Footer -->
-  <footer class="app-footer">
+  <footer class="app-footer" *ngIf="!isAuthPage">
     <p>&copy; 2025 Expense Tracker. Kgothalo Mentorship 2025</p>
   </footer>
 </div>

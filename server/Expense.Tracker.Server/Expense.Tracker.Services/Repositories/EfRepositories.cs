@@ -87,6 +87,32 @@ namespace Expense.Tracker.Services.Repositories
             return await _context.Categories
                 .FirstOrDefaultAsync(c => c.Name == name);
         }
+
+        public async Task<IEnumerable<Category>> GetByUserIdAsync(Guid userId)
+        {
+            return await _context.Categories
+                .Where(c => c.UserId == userId.ToString())
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Category>> GetByUserIdAndTypeAsync(Guid userId, CategoryType type)
+        {
+            return await _context.Categories
+                .Where(c => c.UserId == userId.ToString() && c.Type == type)
+                .ToListAsync();
+        }
+
+        public async Task<Category?> GetByUserIdAndNameAsync(Guid userId, string name)
+        {
+            return await _context.Categories
+                .FirstOrDefaultAsync(c => c.UserId == userId.ToString() && c.Name == name);
+        }
+
+        public async Task<Category?> GetByUserIdAndIdAsync(Guid userId, string id)
+        {
+            return await _context.Categories
+                .FirstOrDefaultAsync(c => c.UserId == userId.ToString() && c.Id == id);
+        }
     }
 
     public class EfTransactionRepository : ITransactionRepository
@@ -100,6 +126,8 @@ namespace Expense.Tracker.Services.Repositories
 
         public async Task<IEnumerable<Transaction>> GetAllAsync()
         {
+            // Note: This method should not be used directly. Use user-specific methods instead.
+            // This is kept for backward compatibility but should be avoided.
             var transactions = await _context.Transactions
                 .Include(t => t.Category)
                 .ToListAsync();
@@ -113,11 +141,40 @@ namespace Expense.Tracker.Services.Repositories
             return transactions;
         }
 
+        public async Task<IEnumerable<Transaction>> GetByUserIdAsync(Guid userId)
+        {
+            var transactions = await _context.Transactions
+                .Include(t => t.Category)
+                .Where(t => t.UserId == userId.ToString())
+                .ToListAsync();
+                
+            foreach (var transaction in transactions)
+            {
+                transaction.Tags = new List<string>();
+            }
+            
+            return transactions;
+        }
+
         public async Task<Transaction?> GetByIdAsync(string id)
         {
             var transaction = await _context.Transactions
                 .Include(t => t.Category)
                 .FirstOrDefaultAsync(t => t.Id == id);
+                
+            if (transaction != null)
+            {
+                transaction.Tags = new List<string>();
+            }
+            
+            return transaction;
+        }
+
+        public async Task<Transaction?> GetByUserIdAndIdAsync(Guid userId, string id)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Category)
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId.ToString());
                 
             if (transaction != null)
             {
@@ -198,11 +255,43 @@ namespace Expense.Tracker.Services.Repositories
             return transactions;
         }
 
+        public async Task<IEnumerable<Transaction>> GetByUserIdAndCategoryIdAsync(Guid userId, string categoryId)
+        {
+            var transactions = await _context.Transactions
+                .Include(t => t.Category)
+                .Where(t => t.UserId == userId.ToString() && t.CategoryId == categoryId)
+                .OrderByDescending(t => t.Date)
+                .ToListAsync();
+                
+            foreach (var transaction in transactions)
+            {
+                transaction.Tags = new List<string>();
+            }
+            
+            return transactions;
+        }
+
         public async Task<IEnumerable<Transaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             var transactions = await _context.Transactions
                 .Include(t => t.Category)
                 .Where(t => t.Date >= startDate && t.Date <= endDate)
+                .OrderByDescending(t => t.Date)
+                .ToListAsync();
+                
+            foreach (var transaction in transactions)
+            {
+                transaction.Tags = new List<string>();
+            }
+            
+            return transactions;
+        }
+
+        public async Task<IEnumerable<Transaction>> GetByUserIdAndDateRangeAsync(Guid userId, DateTime startDate, DateTime endDate)
+        {
+            var transactions = await _context.Transactions
+                .Include(t => t.Category)
+                .Where(t => t.UserId == userId.ToString() && t.Date >= startDate && t.Date <= endDate)
                 .OrderByDescending(t => t.Date)
                 .ToListAsync();
                 
@@ -246,6 +335,22 @@ namespace Expense.Tracker.Services.Repositories
             return transactions;
         }
 
+        public async Task<IEnumerable<Transaction>> GetRecurringByUserIdAsync(Guid userId)
+        {
+            var transactions = await _context.Transactions
+                .Include(t => t.Category)
+                .Where(t => t.IsRecurring && t.UserId == userId.ToString())
+                .OrderByDescending(t => t.Date)
+                .ToListAsync();
+                
+            foreach (var transaction in transactions)
+            {
+                transaction.Tags = new List<string>();
+            }
+            
+            return transactions;
+        }
+
         public async Task<decimal> GetTotalAmountByTypeAsync(TransactionType type, DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _context.Transactions.Where(t => t.Type == type);
@@ -263,6 +368,23 @@ namespace Expense.Tracker.Services.Repositories
         {
             var transactions = await _context.Transactions
                 .Include(t => t.Category)
+                .OrderByDescending(t => t.Date)
+                .Take(limit)
+                .ToListAsync();
+                
+            foreach (var transaction in transactions)
+            {
+                transaction.Tags = new List<string>();
+            }
+            
+            return transactions;
+        }
+
+        public async Task<IEnumerable<Transaction>> GetRecentByUserIdAsync(Guid userId, int limit)
+        {
+            var transactions = await _context.Transactions
+                .Include(t => t.Category)
+                .Where(t => t.UserId == userId.ToString())
                 .OrderByDescending(t => t.Date)
                 .Take(limit)
                 .ToListAsync();

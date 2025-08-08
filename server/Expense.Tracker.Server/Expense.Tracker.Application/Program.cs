@@ -10,6 +10,7 @@ var connectionString = builder.Configuration.GetConnectionString("PostgresConnec
 
 // Add services to the container using extension methods
 builder.Services.AddExpenseTrackerServices(connectionString);
+builder.Services.AddExpenseTrackerAuthentication(builder.Configuration);
 builder.Services.AddExpenseTrackerControllers();
 builder.Services.AddExpenseTrackerSwagger();
 builder.Services.AddExpenseTrackerCors();
@@ -42,6 +43,7 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

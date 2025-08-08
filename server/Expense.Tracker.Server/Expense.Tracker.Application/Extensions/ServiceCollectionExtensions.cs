@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Expense.Tracker.Application.Extensions
 {
@@ -26,10 +29,18 @@ namespace Expense.Tracker.Application.Extensions
                 options.UseNpgsql(connectionString)
             );
 
+            // Register HTTP context accessor for current user service
+            services.AddHttpContextAccessor();
+
             // Register repositories as scoped (Entity Framework)
             services.AddScoped<ICategoryRepository, EfCategoryRepository>();
             services.AddScoped<ITransactionRepository, EfTransactionRepository>();
             services.AddScoped<ITagRepository, EfTagRepository>();
+            services.AddScoped<IUserRepository, EfUserRepository>();
+            services.AddScoped<IUserSessionRepository, EfUserSessionRepository>();
+
+            // Register utility services
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             // Register business services as scoped
             services.AddScoped<ICategoryService, CategoryService>();
@@ -37,6 +48,9 @@ namespace Expense.Tracker.Application.Extensions
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<ITagService, TagService>();
             services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+            // Register authentication services
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
 
             return services;
         }
@@ -91,6 +105,34 @@ namespace Expense.Tracker.Application.Extensions
                     c.IncludeXmlComments(xmlPath);
                 }
 
+                // Configure JWT authentication in Swagger
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
+                        },
+                        new List<string>()
+                    }
+                });
+
                 // Configure enum handling to preserve names as strings
                 c.SchemaFilter<EnumSchemaFilter>();
                 c.UseAllOfToExtendReferenceSchemas();
@@ -123,6 +165,40 @@ namespace Expense.Tracker.Application.Extensions
                            .AllowAnyHeader()
                            .AllowCredentials();
                 });
+            });
+
+            return services;
+        }
+
+        /// <summary>
+        /// Add and configure JWT authentication
+        /// </summary>
+        /// <param name="services">The service collection</param>
+        /// <param name="configuration">The configuration</param>
+        /// <returns>The service collection for chaining</returns>
+        public static IServiceCollection AddExpenseTrackerAuthentication(this IServiceCollection services, IConfiguration configuration)
+        {
+            var jwtSecret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
+            var key = Encoding.ASCII.GetBytes(jwtSecret);
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
             });
 
             return services;

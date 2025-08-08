@@ -1,0 +1,222 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="header">
+      <h1>Create Account</h1>
+      <p>Join Expense Tracker and take control of your finances</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+            placeholder="Optional"
+            autocomplete="given-name"
+          />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+            placeholder="Optional"
+            autocomplete="family-name"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Username *</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          [class.error]="isFieldInvalid('username')"
+          [class.checking]="isCheckingUsername()"
+          placeholder="Choose a unique username"
+          autocomplete="username"
+        />
+        @if (isCheckingUsername()) {
+          <div class="status-message checking">Checking availability...</div>
+        }
+        @if (usernameStatus() === 'taken') {
+          <div class="status-message error">Username is already taken</div>
+        }
+        @if (usernameStatus() === 'available' && registerForm.get('username')?.value) {
+          <div class="status-message success">Username is available!</div>
+        }
+        @if (usernameSuggestions().length > 0) {
+          <div class="suggestions">
+            <p>Suggestions:</p>
+            <div class="suggestion-buttons">
+              @for (suggestion of usernameSuggestions(); track suggestion) {
+                <button
+                  type="button"
+                  class="suggestion-btn"
+                  (click)="selectUsername(suggestion)"
+                >
+                  {{ suggestion }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+        @if (isFieldInvalid('username')) {
+          <div class="error-message">
+            @if (registerForm.get('username')?.errors?.['required']) {
+              Username is required
+            }
+            @if (registerForm.get('username')?.errors?.['minlength']) {
+              Username must be at least 3 characters
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          [class.error]="isFieldInvalid('email')"
+          [class.checking]="isCheckingEmail()"
+          placeholder="Enter your email address"
+          autocomplete="email"
+        />
+        @if (isCheckingEmail()) {
+          <div class="status-message checking">Checking availability...</div>
+        }
+        @if (emailStatus() === 'taken') {
+          <div class="status-message error">Email is already registered</div>
+        }
+        @if (emailStatus() === 'available' && registerForm.get('email')?.value) {
+          <div class="status-message success">Email is available!</div>
+        }
+        @if (isFieldInvalid('email')) {
+          <div class="error-message">
+            @if (registerForm.get('email')?.errors?.['required']) {
+              Email address is required
+            }
+            @if (registerForm.get('email')?.errors?.['email']) {
+              Please enter a valid email address
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <div class="password-input-wrapper">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            [class.error]="isFieldInvalid('password')"
+            placeholder="Create a secure password"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          >
+            @if (showPassword()) {
+              👁️
+            } @else {
+              🙈
+            }
+          </button>
+        </div>
+        <div class="password-strength">
+          <div class="strength-bar" [class]="getPasswordStrength()"></div>
+          <span class="strength-text">{{ getPasswordStrengthText() }}</span>
+        </div>
+        @if (isFieldInvalid('password')) {
+          <div class="error-message">
+            @if (registerForm.get('password')?.errors?.['required']) {
+              Password is required
+            }
+            @if (registerForm.get('password')?.errors?.['minlength']) {
+              Password must be at least 6 characters
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password *</label>
+        <input
+          id="confirmPassword"
+          [type]="showConfirmPassword() ? 'text' : 'password'"
+          formControlName="confirmPassword"
+          [class.error]="isFieldInvalid('confirmPassword') || registerForm.errors?.['passwordMismatch']"
+          placeholder="Confirm your password"
+          autocomplete="new-password"
+        />
+        @if (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched) {
+          <div class="error-message">Passwords do not match</div>
+        }
+        @if (isFieldInvalid('confirmPassword')) {
+          <div class="error-message">
+            @if (registerForm.get('confirmPassword')?.errors?.['required']) {
+              Please confirm your password
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="acceptTerms" />
+          <span class="checkmark"></span>
+          I agree to the <a href="/terms" target="_blank" class="link">Terms of Service</a> 
+          and <a href="/privacy" target="_blank" class="link">Privacy Policy</a>
+        </label>
+        @if (isFieldInvalid('acceptTerms')) {
+          <div class="error-message">
+            You must accept the terms and conditions
+          </div>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert alert-error">
+          {{ errorMessage() }}
+          @if (validationErrors().length > 0) {
+            <ul class="validation-errors">
+              @for (error of validationErrors(); track error) {
+                <li>{{ error }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary btn-full"
+        [disabled]="registerForm.invalid || isLoading() || !canSubmit()"
+      >
+        @if (isLoading()) {
+          <span class="spinner"></span>
+          Creating Account...
+        } @else {
+          Create Account
+        }
+      </button>
+    </form>
+
+    <div class="footer">
+      <p>
+        Already have an account?
+        <a routerLink="/auth/sign-in" class="link">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

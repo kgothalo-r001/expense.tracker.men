@@ -1,0 +1,142 @@
+<div class="account-container">
+  <div class="account-header">
+    <h2>👤 Account Settings</h2>
+    <p class="subtitle">Manage your account information and preferences</p>
+  </div>
+
+  <div class="message-container">
+    <div class="alert alert-success" *ngIf="successMessage">
+      <i class="icon">✅</i>
+      {{ successMessage }}
+    </div>
+    <div class="alert alert-error" *ngIf="errorMessage">
+      <i class="icon">❌</i>
+      {{ errorMessage }}
+    </div>
+  </div>
+
+  <div class="account-card">
+    <div class="card-header">
+      <h3>Personal Information</h3>
+      <button 
+        class="btn btn-secondary" 
+        (click)="toggleEdit()"
+        [disabled]="isLoading"
+      >
+        {{ isEditing ? 'Cancel' : 'Edit' }}
+      </button>
+    </div>
+
+    <form [formGroup]="accountForm" (ngSubmit)="saveChanges()" class="account-form">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input
+          id="firstName"
+          type="text"
+          formControlName="firstName"
+          class="form-control"
+          [class.error]="isFieldInvalid('firstName')"
+          [readonly]="!isEditing"
+        >
+        <div class="error-message" *ngIf="isFieldInvalid('firstName')">
+          {{ getFieldError('firstName') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input
+          id="lastName"
+          type="text"
+          formControlName="lastName"
+          class="form-control"
+          [class.error]="isFieldInvalid('lastName')"
+          [readonly]="!isEditing"
+        >
+        <div class="error-message" *ngIf="isFieldInvalid('lastName')">
+          {{ getFieldError('lastName') }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          class="form-control"
+          readonly
+        >
+        <small class="help-text">Username cannot be changed</small>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="form-control"
+          readonly
+        >
+        <small class="help-text">Contact support to change your email</small>
+      </div>
+
+      <div class="form-actions" *ngIf="isEditing">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="!accountForm.valid || isLoading"
+        >
+          <span *ngIf="isLoading">Saving...</span>
+          <span *ngIf="!isLoading">Save Changes</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="account-card">
+    <div class="card-header">
+      <h3>Account Actions</h3>
+    </div>
+
+    <div class="action-section">
+      <div class="action-item">
+        <div class="action-info">
+          <h4>Sign Out</h4>
+          <p>Sign out of your account on this device</p>
+        </div>
+        <button class="btn btn-secondary" (click)="signOut()">
+          🚪 Sign Out
+        </button>
+      </div>
+
+      <div class="action-item danger">
+        <div class="action-info">
+          <h4>Delete Account</h4>
+          <p>Permanently delete your account and all associated data</p>
+        </div>
+        <button class="btn btn-danger" (click)="deleteAccount()">
+          🗑️ Delete Account
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="account-card" *ngIf="currentUser">
+    <div class="card-header">
+      <h3>Account Statistics</h3>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value">Welcome!</div>
+        <div class="stat-label">{{ currentUser.firstName || currentUser.username }}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">Member Since</div>
+        <div class="stat-label">{{ currentUser.createdAt | date:'MMMM yyyy' }}</div>
+      </div>
+    </div>
+  </div>
+</div>

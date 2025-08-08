@@ -18,12 +18,7 @@
     "target": "ES2022",
     "module": "ES2022",
     "baseUrl": ".",
-    "paths": {
-      "@business/*": ["../business/*"],
-      "@business/auto": ["../business/auto/autobusinessclient"],
-      "@business/services": ["../business/services"],
-      "@business/state": ["../business/state"]
-    }
+    "paths": {}
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

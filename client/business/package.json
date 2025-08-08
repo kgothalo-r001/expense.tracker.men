@@ -9,8 +9,7 @@
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "nswag": "nswag run nswag.json && node override.cjs",
-    "genClient": "npm run nswag"
+    "genClient": "nswag run nswag.json && node override.cjs"
   },
   "keywords": [
     "typescript",

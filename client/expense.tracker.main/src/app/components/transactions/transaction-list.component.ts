@@ -2,9 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { Transaction, TransactionType } from '@business/auto';
-import { TransactionStateService } from '@business/state';
-import { TransactionService } from '@business/services';
+import { Store } from '@ngrx/store';
+import { Transaction, TransactionType, TransactionType2 } from '../../../../auto/autoexpensetrackerclient';
+import * as TransactionActions from '../../store/transaction/transaction.actions';
+import { selectAllTransactions, selectTransactionLoading, selectTransactionError } from '../../store/transaction/transaction.selectors';
+import { AppState } from '../../store/app.state';
 import { TransactionModalComponent } from './transaction-modal.component';
 import { DeleteConfirmationModalComponent } from '../delete-confirmation-modal';
 
@@ -36,36 +38,18 @@ export class TransactionListComponent implements OnInit {
 
   transactionTypes = Object.values(TransactionType);
 
-  constructor(
-    private transactionStateService: TransactionStateService,
-    private transactionService: TransactionService
-  ) {
-    this.transactions$ = this.transactionStateService.transactions$;
-    this.isLoading$ = this.transactionStateService.isLoading$;
-    this.error$ = this.transactionStateService.error$;
+  constructor(private store: Store<AppState>) {
+    this.transactions$ = this.store.select(selectAllTransactions);
+    this.isLoading$ = this.store.select(selectTransactionLoading);
+    this.error$ = this.store.select(selectTransactionError);
   }
 
   ngOnInit(): void {
-    this.transactionStateService.loadTransactions();
+    this.store.dispatch(TransactionActions.loadTransactions());
   }
 
   loadTransactions(): void {
-    const filters: any = {};
-    
-    if (this.selectedType !== 'ALL') {
-      filters.type = this.selectedType;
-    }
-    if (this.selectedCategoryId) {
-      filters.categoryId = this.selectedCategoryId;
-    }
-    if (this.startDate) {
-      filters.startDate = new Date(this.startDate);
-    }
-    if (this.endDate) {
-      filters.endDate = new Date(this.endDate);
-    }
-
-    this.transactionStateService.setFilters(filters);
+    this.store.dispatch(TransactionActions.loadTransactions());
   }
 
   onFilterChange(): void {
@@ -105,10 +89,13 @@ export class TransactionListComponent implements OnInit {
   }
 
   onTransactionSaved(transaction: Transaction): void {
-    if (this.isEditMode) {
-      this.transactionStateService.updateTransaction(transaction);
+    if (this.isEditMode && transaction.id) {
+      this.store.dispatch(TransactionActions.updateTransaction({ 
+        id: transaction.id, 
+        transaction: transaction as any
+      }));
     } else {
-      this.transactionStateService.addTransaction(transaction);
+      this.store.dispatch(TransactionActions.addTransaction({ transaction: transaction as any }));
     }
     this.showTransactionModal = false;
     this.selectedTransaction = null;
@@ -127,7 +114,7 @@ export class TransactionListComponent implements OnInit {
     this.startDate = '';
     this.endDate = '';
     this.searchTerm = '';
-    this.transactionStateService.setFilters({});
+    this.store.dispatch(TransactionActions.loadTransactions());
   }
 
   trackByTransactionId(index: number, transaction: Transaction): string {

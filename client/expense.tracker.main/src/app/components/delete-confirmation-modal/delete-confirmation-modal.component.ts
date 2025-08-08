@@ -1,7 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TransactionService } from '../../../../../business/services/transaction.service';
-import { TransactionStateService } from '../../../../../business/state/transaction-state.service';
+import { Store } from '@ngrx/store';
+import * as TransactionActions from '../../store/transaction/transaction.actions';
+import { AppState } from '../../store/app.state';
 
 @Component({
   selector: 'app-delete-confirmation-modal',
@@ -20,8 +21,7 @@ export class DeleteConfirmationModalComponent {
   isDeleting = false;
 
   constructor(
-    private transactionService: TransactionService,
-    private transactionStateService: TransactionStateService
+    private store: Store<AppState>
   ) {}
 
   onConfirm(): void {
@@ -32,21 +32,11 @@ export class DeleteConfirmationModalComponent {
 
     this.isDeleting = true;
 
-    this.transactionService.deleteTransaction(this.transactionId).subscribe({
-      next: () => {
-        // Remove from state management
-        this.transactionStateService.removeTransaction(this.transactionId!);
-        
-        this.isDeleting = false;
-        this.deleted.emit();
-        this.confirmed.emit();
-      },
-      error: (error) => {
-        console.error('Error deleting transaction:', error);
-        this.isDeleting = false;
-        // Optionally emit an error event or show an error message
-      }
-    });
+    this.store.dispatch(TransactionActions.deleteTransaction({ id: this.transactionId }));
+
+    this.isDeleting = false;
+    this.deleted.emit();
+    this.confirmed.emit();
   }
 
   onCancel(): void {

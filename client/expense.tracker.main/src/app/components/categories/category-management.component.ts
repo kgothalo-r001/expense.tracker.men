@@ -2,14 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { 
   Category, 
   CreateCategoryRequest, 
   CreateCategoryRequestType,
   UpdateCategoryRequest
-} from '@business/auto';
-import { CategoryStateService } from '@business/state';
-import { CategoryService } from '@business/services';
+} from '../../../../auto/autoexpensetrackerclient';
+import * as CategoryActions from '../../store/category/category.actions';
+import { selectAllCategories, selectCategoryLoading, selectCategoryError } from '../../store';
+import { AppState } from '../../store/app.state';
 
 @Component({
   selector: 'app-category-management',
@@ -38,16 +40,15 @@ export class CategoryManagementComponent implements OnInit {
   ];
 
   constructor(
-    private categoryStateService: CategoryStateService,
-    private categoryService: CategoryService
+    private store: Store<AppState>
   ) {
-    this.categories$ = this.categoryStateService.categories$;
-    this.isLoading$ = this.categoryStateService.isLoading$;
-    this.error$ = this.categoryStateService.error$;
+    this.categories$ = this.store.select(selectAllCategories);
+    this.isLoading$ = this.store.select(selectCategoryLoading);
+    this.error$ = this.store.select(selectCategoryError);
   }
 
   ngOnInit(): void {
-    this.categoryStateService.loadCategories();
+    this.store.dispatch(CategoryActions.loadCategories());
   }
 
   onAddCategory(): void {
@@ -65,15 +66,8 @@ export class CategoryManagementComponent implements OnInit {
         type: this.newCategoryType
       };
 
-      this.categoryService.createCategory(categoryData).subscribe({
-        next: (category) => {
-          this.categoryStateService.addCategory(category);
-          this.cancelAddCategory();
-        },
-        error: (error) => {
-          console.error('Failed to create category:', error);
-        }
-      });
+      this.store.dispatch(CategoryActions.addCategory({ category: categoryData as any }));
+      this.cancelAddCategory();
     }
   }
 
@@ -99,15 +93,11 @@ export class CategoryManagementComponent implements OnInit {
         type: this.editingCategory.type as any
       };
 
-      this.categoryService.updateCategory(this.editingCategory.id!, updateRequest).subscribe({
-        next: (category) => {
-          this.categoryStateService.updateCategory(category);
-          this.editingCategory = null;
-        },
-        error: (error) => {
-          console.error('Failed to update category:', error);
-        }
-      });
+      this.store.dispatch(CategoryActions.updateCategory({ 
+        id: Number(this.editingCategory.id!), 
+        category: updateRequest as any
+      }));
+      this.editingCategory = null;
     }
   }
 
@@ -117,14 +107,7 @@ export class CategoryManagementComponent implements OnInit {
 
   onDeleteCategory(categoryId: string): void {
     if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-      this.categoryService.deleteCategory(categoryId).subscribe({
-        next: () => {
-          this.categoryStateService.removeCategory(categoryId);
-        },
-        error: (error) => {
-          console.error('Failed to delete category:', error);
-        }
-      });
+      this.store.dispatch(CategoryActions.deleteCategory({ id: Number(categoryId) }));
     }
   }
 

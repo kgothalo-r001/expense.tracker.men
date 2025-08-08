@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Transaction } from '@business/auto';
+import { Transaction } from '../../../../auto/autoexpensetrackerclient';
 import { TransactionFormComponent } from '../transaction-form/transaction-form.component';
 
 @Component({

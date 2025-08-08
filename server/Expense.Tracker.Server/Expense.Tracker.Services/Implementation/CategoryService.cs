@@ -8,26 +8,80 @@ namespace Expense.Tracker.Services.Implementation
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public CategoryService(ICategoryRepository categoryRepository)
+        public CategoryService(ICategoryRepository categoryRepository, ICurrentUserService currentUserService)
         {
             _categoryRepository = categoryRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
         {
-            return await _categoryRepository.GetAllAsync();
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+            
+            return await _categoryRepository.GetByUserIdAsync(currentUserId.Value);
+        }
+
+        public async Task<IEnumerable<Category>> GetUserCategoriesAsync(Guid userId)
+        {
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+
+            // Ensure the current user can only access their own categories
+            if (currentUserId.Value != userId)
+            {
+                throw new UnauthorizedAccessException("You can only access your own categories.");
+            }
+            
+            return await _categoryRepository.GetByUserIdAsync(userId);
         }
 
         public async Task<Category?> GetCategoryByIdAsync(string id)
         {
-            return await _categoryRepository.GetByIdAsync(id);
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+            
+            return await _categoryRepository.GetByUserIdAndIdAsync(currentUserId.Value, id);
+        }
+
+        public async Task<Category?> GetUserCategoryByIdAsync(string id, Guid userId)
+        {
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+
+            // Ensure the current user can only access their own categories
+            if (currentUserId.Value != userId)
+            {
+                throw new UnauthorizedAccessException("You can only access your own categories.");
+            }
+            
+            return await _categoryRepository.GetByUserIdAndIdAsync(userId, id);
         }
 
         public async Task<Category> CreateCategoryAsync(CreateCategoryRequest request)
         {
-            // Check if category with same name exists
-            var existingCategory = await _categoryRepository.GetByNameAsync(request.Name);
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+
+            // Check if category with same name exists for this user
+            var existingCategory = await _categoryRepository.GetByUserIdAndNameAsync(currentUserId.Value, request.Name);
             if (existingCategory != null)
             {
                 throw new InvalidOperationException($"Category with name '{request.Name}' already exists.");
@@ -35,6 +89,7 @@ namespace Expense.Tracker.Services.Implementation
 
             var category = new Category
             {
+                UserId = currentUserId.Value.ToString(),
                 Name = request.Name,
                 Description = request.Description,
                 Color = request.Color,
@@ -48,16 +103,22 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<Category?> UpdateCategoryAsync(UpdateCategoryRequest request)
         {
-            var existingCategory = await _categoryRepository.GetByIdAsync(request.Id);
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+
+            var existingCategory = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId.Value, request.Id);
             if (existingCategory == null)
             {
                 return null;
             }
 
-            // Check if another category with the same name exists
+            // Check if another category with the same name exists for this user
             if (!string.IsNullOrEmpty(request.Name))
             {
-                var nameConflict = await _categoryRepository.GetByNameAsync(request.Name);
+                var nameConflict = await _categoryRepository.GetByUserIdAndNameAsync(currentUserId.Value, request.Name);
                 if (nameConflict != null && nameConflict.Id != request.Id)
                 {
                     throw new InvalidOperationException($"Category with name '{request.Name}' already exists.");
@@ -81,7 +142,13 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<bool> DeleteCategoryAsync(string id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id);
+            var currentUserId = _currentUserService.GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated.");
+            }
+
+            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId.Value, id);
             if (category == null)
             {
                 return false;

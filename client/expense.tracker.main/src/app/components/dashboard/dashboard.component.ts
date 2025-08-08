@@ -7,8 +7,8 @@ import {
   BudgetProjection, 
   MonthlySpending, 
   CategoryTrend 
-} from '@business/auto';
-import { ApiService } from '../../services/api.service';
+} from '../../../../auto/autoexpensetrackerclient';
+import { DashboardService } from '../../services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,25 +24,21 @@ export class DashboardComponent implements OnInit {
   monthlySpendingTrends$!: Observable<MonthlySpending[]>;
   categoryTrends$!: Observable<CategoryTrend[]>;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private dashboardService: DashboardService) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
   }
 
   loadDashboardData(): void {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const today = new Date();
-
-    this.dashboardSummary$ = this.apiService.getDashboardSummary(thirtyDaysAgo, today);
-    this.expenseAnalytics$ = this.apiService.getExpenseAnalytics(12);
-    this.budgetProjection$ = this.apiService.getBudgetProjection();
-    this.monthlySpendingTrends$ = this.apiService.getMonthlySpendingTrends(6);
-    this.categoryTrends$ = this.apiService.getCategoryTrends();
+    this.dashboardSummary$ = this.dashboardService.getDashboardSummary();
+    this.expenseAnalytics$ = this.dashboardService.getExpenseAnalytics();
+    this.budgetProjection$ = this.dashboardService.getBudgetProjection();
+    this.monthlySpendingTrends$ = this.dashboardService.getMonthlySpendingTrends();
+    this.categoryTrends$ = this.dashboardService.getCategoryTrends();
   }
 
   onDateRangeChange(startDate: Date, endDate: Date): void {
-    this.dashboardSummary$ = this.apiService.getDashboardSummary(startDate, endDate);
+    this.dashboardSummary$ = this.dashboardService.getDashboardSummary();
   }
 }

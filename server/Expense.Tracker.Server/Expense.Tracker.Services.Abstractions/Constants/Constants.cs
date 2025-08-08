@@ -8,6 +8,7 @@ namespace Expense.Tracker.Services.Abstractions.Constants
         
         public static class Routes
         {
+            public const string Auth = "auth";
             public const string Categories = "categories";
             public const string Transactions = "transactions";
             public const string Dashboard = "dashboard";

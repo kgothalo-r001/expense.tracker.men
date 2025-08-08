@@ -180,6 +180,20 @@ body {
   --transition-base: 0.2s ease;
   --transition-slow: 0.3s ease;
   --transition-slower: 0.5s ease;
+  
+  /* Gradient Variables */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-auth-card: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+  
+  /* Auth Component Colors */
+  --auth-text-primary: #1a1a1a;
+  --auth-text-secondary: #4a4a4a;
+  --auth-text-muted: #7a7a7a;
+  --auth-border: #d1d5db;
+  --auth-border-focus: #667eea;
+  --auth-surface: #ffffff;
+  --auth-surface-secondary: #f9fafb;
+  --auth-surface-tertiary: #f3f4f6;
 }
 
 /* ============================================
@@ -226,6 +240,16 @@ body {
   --color-info: var(--info-500);
   --color-info-hover: var(--info-400);
   --color-info-light: var(--info-900);
+
+  /* Auth Component Colors - Dark Mode */
+  --auth-text-primary: var(--secondary-50);
+  --auth-text-secondary: var(--secondary-200);
+  --auth-text-muted: var(--secondary-400);
+  --auth-border: var(--secondary-700);
+  --auth-border-focus: #667eea;
+  --auth-surface: var(--secondary-800);
+  --auth-surface-secondary: var(--secondary-700);
+  --auth-surface-tertiary: var(--secondary-600);
 
   /* Dark Mode Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);

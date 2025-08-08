@@ -13,6 +13,8 @@ namespace Expense.Tracker.Services.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -122,6 +124,48 @@ namespace Expense.Tracker.Services.Data
 
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.UsageCount);
+            });
+
+            // Configure User entity
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("users");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Username).HasColumnName("username").IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Email).HasColumnName("email").IsRequired().HasMaxLength(255);
+                entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
+                entity.Property(e => e.FirstName).HasColumnName("first_name").HasMaxLength(100);
+                entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(100);
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
+
+                entity.HasIndex(e => e.Username).IsUnique();
+                entity.HasIndex(e => e.Email).IsUnique();
+            });
+
+            // Configure UserSession entity
+            modelBuilder.Entity<UserSession>(entity =>
+            {
+                entity.ToTable("user_sessions");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.Property(e => e.Token).HasColumnName("token").IsRequired();
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.ExpiresAt);
+
+                // Configure relationship
+                entity.HasOne(s => s.User)
+                    .WithMany()
+                    .HasForeignKey(s => s.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Remove the duplicate ToTable calls since they're now included above
