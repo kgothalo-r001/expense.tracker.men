@@ -33,16 +33,6 @@ namespace Expense.Tracker.Services.Abstractions.Constants
         }
     }
 
-    public static class ValidationConstants
-    {
-        public const int MaxNameLength = 100;
-        public const int MaxDescriptionLength = 500;
-        public const int MaxNotesLength = 1000;
-        public const int MaxTagLength = 50;
-        public const decimal MinAmount = 0.01m;
-        public const int MaxTagsPerTransaction = 10;
-    }
-
     public static class BusinessConstants
     {
         public const int RecentTransactionsLimit = 10;
