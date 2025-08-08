@@ -52,32 +52,25 @@ namespace Expense.Tracker.Services.Implementation
                 var monthlySpendingList = new List<MonthlySpending>();
                 var currentDate = DateTime.UtcNow.Date;
 
-                // Create tasks for concurrent execution
-                var monthlyTasks = new List<Task<MonthlySpending>>();
-
                 for (int i = 0; i < monthsBack; i++)
                 {
-                    var monthIndex = i; // Capture for closure
-                    var task = Task.Run(async () =>
+                    var targetDate = currentDate.AddMonths(-i);
+                    var (monthStart, monthEnd) = AnalyticsHelpers.GetMonthDateRange(targetDate);
+
+                    var filteredTransactions = await _transactionRepository.GetByDateRangeAsync(monthStart, monthEnd);
+                    var expenseTransactions = filteredTransactions.Where(t => t.Type == TransactionType.EXPENSE);
+
+                    var monthlySpending = new MonthlySpending
                     {
-                        var targetDate = currentDate.AddMonths(-monthIndex);
-                        var (monthStart, monthEnd) = AnalyticsHelpers.GetMonthDateRange(targetDate);
+                        Month = monthStart.ToString("yyyy-MM"),
+                        Amount = expenseTransactions.Sum(t => t.Amount),
+                        TransactionCount = expenseTransactions.Count()
+                    };
 
-                        var filteredTransactions = await _transactionRepository.GetByDateRangeAsync(monthStart, monthEnd);
-                        var expenseTransactions = filteredTransactions.Where(t => t.Type == TransactionType.EXPENSE);
-
-                        return new MonthlySpending
-                        {
-                            Month = monthStart.ToString("yyyy-MM"),
-                            Amount = expenseTransactions.Sum(t => t.Amount),
-                            TransactionCount = expenseTransactions.Count()
-                        };
-                    });
-                    monthlyTasks.Add(task);
+                    monthlySpendingList.Add(monthlySpending);
                 }
 
-                var monthlyResults = await Task.WhenAll(monthlyTasks);
-                return monthlyResults.OrderBy(ms => ms.Month);
+                return monthlySpendingList.OrderBy(ms => ms.Month);
             }
             catch (Exception ex)
             {
@@ -95,14 +88,8 @@ namespace Expense.Tracker.Services.Implementation
                 
                 var categories = await _categoryRepository.GetAllAsync();
 
-                // Get all transactions for both months concurrently
-                var currentMonthTransactionsTask = _transactionRepository.GetByDateRangeAsync(currentMonthStart, currentMonthEnd);
-                var previousMonthTransactionsTask = _transactionRepository.GetByDateRangeAsync(previousMonthStart, previousMonthEnd);
-
-                await Task.WhenAll(currentMonthTransactionsTask, previousMonthTransactionsTask);
-
-                var currentMonthTransactions = currentMonthTransactionsTask.Result;
-                var previousMonthTransactions = previousMonthTransactionsTask.Result;
+                var currentMonthTransactions = await _transactionRepository.GetByDateRangeAsync(currentMonthStart, currentMonthEnd);
+                var previousMonthTransactions = await _transactionRepository.GetByDateRangeAsync(previousMonthStart, previousMonthEnd);
 
                 var categoryTrends = new List<CategoryTrend>();
 
