@@ -1,5 +1,6 @@
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Implementation;
+using Expense.Tracker.Services.Implementation.Factories;
 using Expense.Tracker.Services.Repositories;
 using Expense.Tracker.Services.Helpers;
 using Expense.Tracker.Services.Abstractions.Models;
@@ -53,7 +54,13 @@ namespace Expense.Tracker.Application.Extensions
             services.AddScoped<ITagService, TagService>();
             services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+            // Register strategy factory
+            services.AddScoped<ICalculationStrategyFactory, CalculationStrategyFactory>();
+
             // Register authentication services
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<ISessionService, SessionService>();
+            services.AddScoped<IUserValidationService, UserValidationService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
 
             return services;

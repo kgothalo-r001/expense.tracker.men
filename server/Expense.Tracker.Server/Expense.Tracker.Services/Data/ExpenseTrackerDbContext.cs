@@ -167,8 +167,6 @@ namespace Expense.Tracker.Services.Data
                     .HasForeignKey(s => s.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-
-            // Remove the duplicate ToTable calls since they're now included above
         }
     }
 }

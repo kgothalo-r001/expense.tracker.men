@@ -1,3 +1,4 @@
+using Expense.Tracker.Services.Abstractions.Constants;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Models;
 
@@ -59,9 +60,10 @@ namespace Expense.Tracker.Services.Abstractions.Interfaces
 
     public interface IAnalyticsService
     {
-        Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, int monthsBack = 6);
+        Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage);
         Task<decimal> CalculateYearlyProjectionAsync(TransactionType type);
-        Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(int monthsBack = 12);
+        Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
+        Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(int monthsBack = AnalyticsConstants.DefaultTrendMonths);
         Task<IEnumerable<CategoryTrend>> GetCategoryTrendsAsync();
         Task<BudgetProjection> GenerateBudgetProjectionAsync();
     }

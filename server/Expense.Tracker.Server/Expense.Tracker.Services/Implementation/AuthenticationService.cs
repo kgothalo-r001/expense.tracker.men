@@ -1,48 +1,29 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using BCrypt.Net;
+using Microsoft.Extensions.Logging;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Services.Implementation;
 
 public class AuthenticationService : IAuthenticationService
 {
     private readonly IUserRepository _userRepository;
-    private readonly IUserSessionRepository _sessionRepository;
-    private readonly IConfiguration _configuration;
-    private readonly IAuthenticatedUserHelper _userHelper;
-    private readonly string _jwtSecret;
-    private readonly int _jwtExpiryMinutes;
+    private readonly ITokenService _tokenService;
+    private readonly ISessionService _sessionService;
+    private readonly IUserValidationService _userValidationService;
+    private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         IUserRepository userRepository,
-        IUserSessionRepository sessionRepository,
-        IConfiguration configuration,
-        IAuthenticatedUserHelper userHelper)
+        ITokenService tokenService,
+        ISessionService sessionService,
+        IUserValidationService userValidationService,
+        ILogger<AuthenticationService> logger)
     {
         _userRepository = userRepository;
-        _sessionRepository = sessionRepository;
-        _configuration = configuration;
-        _userHelper = userHelper;
-        
-        // Try to get JWT secret from environment variable first, then configuration
-        _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") 
-            ?? _configuration["Jwt:Secret"] 
-            ?? throw new InvalidOperationException("JWT Secret not configured. Set JWT_SECRET environment variable or Jwt:Secret in configuration.");
-            
-        // Validate JWT secret strength
-        if (_jwtSecret.Length < 32)
-        {
-            throw new InvalidOperationException("JWT Secret must be at least 32 characters long for security.");
-        }
-        
-        _jwtExpiryMinutes = int.Parse(_configuration["Jwt:ExpiryMinutes"] ?? "60");
+        _tokenService = tokenService;
+        _sessionService = sessionService;
+        _userValidationService = userValidationService;
+        _logger = logger;
     }
 
     public async Task<AuthenticationResult> LoginAsync(LoginRequest request)
@@ -60,7 +41,7 @@ public class AuthenticationService : IAuthenticationService
                 };
             }
 
-            if (!VerifyPassword(request.Password, user.PasswordHash))
+            if (!_userValidationService.VerifyPassword(request.Password, user.PasswordHash))
             {
                 return new AuthenticationResult
                 {
@@ -69,30 +50,21 @@ public class AuthenticationService : IAuthenticationService
                 };
             }
 
-            var token = GenerateJwtToken(user.Id, user.Username, user.Email);
+            var token = _tokenService.GenerateJwtToken(user.Id, user.Username, user.Email);
 
-            // Store token in database using repository
-            var session = new UserSession
-            {
-                UserId = user.Id,
-                Token = token,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
-                IsActive = true
-            };
-            var createdSession = await _sessionRepository.CreateSessionAsync(session);
-
-            // Set session cookie for enhanced security
-            _userHelper.SetSessionCookie(createdSession.Id.ToString());
+            // Create session using session service
+            var session = await _sessionService.CreateSessionAsync(user.Id, token);
 
             return new AuthenticationResult
             {
                 Success = true,
                 Token = token,
-                User = MapToUserDto(user)
+                User = ConvertUserToDto(user)
             };
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred during login for user: {UsernameOrEmail}", request.UsernameOrEmail);
             return new AuthenticationResult
             {
                 Success = false,
@@ -107,14 +79,14 @@ public class AuthenticationService : IAuthenticationService
         
         try
         {
-            // Validate username availability using repository
-            if (!await _userRepository.IsUsernameAvailableAsync(request.Username))
+            // Validate username availability using validation service
+            if (!await _userValidationService.IsUsernameAvailableAsync(request.Username))
             {
                 result.ValidationErrors.Add("Username is already taken");
             }
 
-            // Validate email availability using repository
-            if (!await _userRepository.IsEmailAvailableAsync(request.Email))
+            // Validate email availability using validation service
+            if (!await _userValidationService.IsEmailAvailableAsync(request.Email))
             {
                 result.ValidationErrors.Add("Email is already registered");
             }
@@ -126,7 +98,7 @@ public class AuthenticationService : IAuthenticationService
                 return result;
             }
 
-            var passwordHash = HashPassword(request.Password);
+            var passwordHash = _userValidationService.HashPassword(request.Password);
             
             var user = new User
             {
@@ -141,26 +113,20 @@ public class AuthenticationService : IAuthenticationService
             // Create user using repository
             var createdUser = await _userRepository.CreateUserAsync(user);
 
-            var token = GenerateJwtToken(createdUser.Id, createdUser.Username, createdUser.Email);
+            var token = _tokenService.GenerateJwtToken(createdUser.Id, createdUser.Username, createdUser.Email);
             
-            // Store token using repository
-            var session = new UserSession
-            {
-                UserId = createdUser.Id,
-                Token = token,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
-                IsActive = true
-            };
-            await _sessionRepository.CreateSessionAsync(session);
+            // Create session using session service
+            var session = await _sessionService.CreateSessionAsync(createdUser.Id, token);
 
             result.Success = true;
             result.Token = token;
-            result.User = MapToUserDto(createdUser);
+            result.User = ConvertUserToDto(createdUser);
 
             return result;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred during registration for user: {Username}", request.Username);
             result.Success = false;
             result.ErrorMessage = "An error occurred during registration";
             return result;
@@ -171,10 +137,11 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            return await _sessionRepository.ValidateSessionAsync(token);
+            return await _sessionService.ValidateSessionAsync(token);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Token validation failed for token: {TokenPrefix}", token[..Math.Min(token.Length, 10)] + "...");
             return false;
         }
     }
@@ -183,11 +150,12 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var user = await _sessionRepository.GetUserBySessionTokenAsync(token);
-            return user != null ? MapToUserDto(user) : null;
+            var user = await _sessionService.GetUserBySessionTokenAsync(token);
+            return user != null ? ConvertUserToDto(user) : null;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to get user by token: {TokenPrefix}", token[..Math.Min(token.Length, 10)] + "...");
             return null;
         }
     }
@@ -196,91 +164,28 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            // Clear session cookie
-            _userHelper.ClearSessionCookie();
-            
-            return await _sessionRepository.DeactivateSessionAsync(token);
+            return await _sessionService.DeactivateSessionAsync(token);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to logout user with token: {TokenPrefix}", token[..Math.Min(token.Length, 10)] + "...");
             return false;
         }
     }
 
     public async Task<List<string>> SuggestUsernamesAsync(string baseUsername)
     {
-        var suggestions = new List<string>();
-
-        try
-        {
-            // Generate variations
-            var variations = new List<string>
-            {
-                baseUsername,
-                $"{baseUsername}1",
-                $"{baseUsername}2",
-                $"{baseUsername}3",
-                $"{baseUsername}_user",
-                $"{baseUsername}_2024",
-                $"{baseUsername}_{DateTime.Now.Year}",
-                $"{baseUsername}_{new Random().Next(100, 999)}"
-            };
-
-            foreach (var variation in variations)
-            {
-                if (await _userRepository.IsUsernameAvailableAsync(variation))
-                {
-                    suggestions.Add(variation);
-                    if (suggestions.Count >= 5) break;
-                }
-            }
-
-            // If we don't have enough suggestions, generate random ones
-            var random = new Random();
-            while (suggestions.Count < 5)
-            {
-                var randomSuffix = random.Next(1000, 9999);
-                var suggestion = $"{baseUsername}{randomSuffix}";
-                
-                if (await _userRepository.IsUsernameAvailableAsync(suggestion) && !suggestions.Contains(suggestion))
-                {
-                    suggestions.Add(suggestion);
-                }
-            }
-        }
-        catch
-        {
-            // Return basic suggestions if database fails
-            suggestions.Add($"{baseUsername}1");
-            suggestions.Add($"{baseUsername}2");
-            suggestions.Add($"{baseUsername}_user");
-        }
-
-        return suggestions;
+        return await _userValidationService.SuggestUsernamesAsync(baseUsername);
     }
 
     public async Task<bool> IsUsernameAvailableAsync(string username)
     {
-        try
-        {
-            return await _userRepository.IsUsernameAvailableAsync(username);
-        }
-        catch
-        {
-            return false;
-        }
+        return await _userValidationService.IsUsernameAvailableAsync(username);
     }
 
     public async Task<bool> IsEmailAvailableAsync(string email)
     {
-        try
-        {
-            return await _userRepository.IsEmailAvailableAsync(email);
-        }
-        catch
-        {
-            return false;
-        }
+        return await _userValidationService.IsEmailAvailableAsync(email);
     }
 
     public async Task<AuthenticationResult> RefreshTokenAsync(string token)
@@ -299,7 +204,7 @@ public class AuthenticationService : IAuthenticationService
             }
 
             // Get user by token
-            var user = await _sessionRepository.GetUserBySessionTokenAsync(token);
+            var user = await _sessionService.GetUserBySessionTokenAsync(token);
             if (user == null)
             {
                 return new AuthenticationResult
@@ -310,30 +215,21 @@ public class AuthenticationService : IAuthenticationService
             }
 
             // Generate new token
-            var newToken = GenerateJwtToken(user.Id, user.Username, user.Email);
+            var newToken = _tokenService.GenerateJwtToken(user.Id, user.Username, user.Email);
 
-            // Deactivate old session
-            await _sessionRepository.DeactivateSessionAsync(token);
-
-            // Create new session
-            var session = new UserSession
-            {
-                UserId = user.Id,
-                Token = newToken,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
-                IsActive = true
-            };
-            await _sessionRepository.CreateSessionAsync(session);
+            // Refresh session using session service
+            var session = await _sessionService.RefreshSessionAsync(token, newToken, user.Id);
 
             return new AuthenticationResult
             {
                 Success = true,
                 Token = newToken,
-                User = MapToUserDto(user)
+                User = ConvertUserToDto(user)
             };
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "An error occurred during token refresh for token: {TokenPrefix}", token[..Math.Min(token.Length, 10)] + "...");
             return new AuthenticationResult
             {
                 Success = false,
@@ -342,48 +238,7 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    private string HashPassword(string password)
-    {
-        return BCrypt.Net.BCrypt.HashPassword(password, 12);
-    }
-
-    private bool VerifyPassword(string password, string hash)
-    {
-        try
-        {
-            return BCrypt.Net.BCrypt.Verify(password, hash);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private string GenerateJwtToken(Guid userId, string username, string email)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_jwtSecret);
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim("id", userId.ToString()),
-                new Claim("username", username),
-                new Claim("email", email),
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Email, email)
-            }),
-            Expires = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
-
-    private static UserDto MapToUserDto(User user)
+    private static UserDto ConvertUserToDto(User user)
     {
         return new UserDto
         {
