@@ -116,6 +116,24 @@ public class AuthController : ControllerBase
         return Ok(new { valid = true });
     }
 
+    [HttpPost("RefreshToken")]
+    public async Task<ActionResult<AuthenticationResult>> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _authService.RefreshTokenAsync(request.Token);
+
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.ErrorMessage });
+        }
+
+        return Ok(result);
+    }
+
     [HttpGet("GetUsernameSuggestions")]
     public async Task<ActionResult<List<string>>> GetUsernameSuggestions([FromQuery] string baseUsername)
     {

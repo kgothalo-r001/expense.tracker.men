@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Expense.Tracker.Peer.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route($"{ApiConstants.BaseApiRoute}/{ApiConstants.Routes.Categories}")]
     public class CategoriesController : ControllerBase
     {

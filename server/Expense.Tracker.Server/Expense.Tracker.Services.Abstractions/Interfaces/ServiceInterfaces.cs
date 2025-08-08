@@ -109,6 +109,7 @@ namespace Expense.Tracker.Services.Abstractions.Interfaces
         Task<bool> ValidateTokenAsync(string token);
         Task<UserDto?> GetUserByTokenAsync(string token);
         Task<bool> LogoutAsync(string token);
+        Task<AuthenticationResult> RefreshTokenAsync(string token);
         Task<List<string>> SuggestUsernamesAsync(string baseUsername);
         Task<bool> IsUsernameAvailableAsync(string username);
         Task<bool> IsEmailAvailableAsync(string email);

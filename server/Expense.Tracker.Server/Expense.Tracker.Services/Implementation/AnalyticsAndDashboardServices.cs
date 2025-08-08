@@ -2,6 +2,7 @@ using Expense.Tracker.Services.Abstractions.Constants;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
+using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Services.Implementation
 {
@@ -9,13 +10,13 @@ namespace Expense.Tracker.Services.Implementation
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICategoryRepository _categoryRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IAuthenticatedUserHelper _userHelper;
 
-        public AnalyticsService(ITransactionRepository transactionRepository, ICategoryRepository categoryRepository, ICurrentUserService currentUserService)
+        public AnalyticsService(ITransactionRepository transactionRepository, ICategoryRepository categoryRepository, IAuthenticatedUserHelper userHelper)
         {
             _transactionRepository = transactionRepository;
             _categoryRepository = categoryRepository;
-            _currentUserService = currentUserService;
+            _userHelper = userHelper;
         }
 
         public async Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, int monthsBack = 6)
@@ -140,39 +141,35 @@ namespace Expense.Tracker.Services.Implementation
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IAnalyticsService _analyticsService;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IAuthenticatedUserHelper _userHelper;
 
         public DashboardService(
             ITransactionRepository transactionRepository,
             ICategoryRepository categoryRepository,
             IAnalyticsService analyticsService,
-            ICurrentUserService currentUserService)
+            IAuthenticatedUserHelper userHelper)
         {
             _transactionRepository = transactionRepository;
             _categoryRepository = categoryRepository;
             _analyticsService = analyticsService;
-            _currentUserService = currentUserService;
+            _userHelper = userHelper;
         }
 
         public async Task<DashboardSummary> GetDashboardSummaryAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
             startDate ??= DateTime.UtcNow.AddMonths(-1).Date;
             endDate ??= DateTime.UtcNow.Date;
 
-            var transactions = await _transactionRepository.GetByUserIdAndDateRangeAsync(currentUserId.Value, startDate.Value, endDate.Value);
-            var categories = await _categoryRepository.GetByUserIdAsync(currentUserId.Value);
+            var transactions = await _transactionRepository.GetByUserIdAndDateRangeAsync(currentUserId, startDate.Value, endDate.Value);
+            var categories = await _categoryRepository.GetByUserIdAsync(currentUserId);
 
             var totalIncome = transactions.Where(t => t.Type == TransactionType.INCOME).Sum(t => t.Amount);
             var totalExpenses = transactions.Where(t => t.Type == TransactionType.EXPENSE).Sum(t => t.Amount);
 
             var topCategories = await GetTopCategoriesAsync(transactions, categories);
-            var recentTransactions = await _transactionRepository.GetRecentByUserIdAsync(currentUserId.Value, BusinessConstants.RecentTransactionsLimit);
+            var recentTransactions = await _transactionRepository.GetRecentByUserIdAsync(currentUserId, BusinessConstants.RecentTransactionsLimit);
 
             return new DashboardSummary
             {
@@ -187,17 +184,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<DashboardSummary> GetUserDashboardSummaryAsync(Guid userId, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own dashboard
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own dashboard.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             startDate ??= DateTime.UtcNow.AddMonths(-1).Date;
             endDate ??= DateTime.UtcNow.Date;
@@ -245,17 +232,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<ExpenseAnalytics> GetUserExpenseAnalyticsAsync(Guid userId, int monthsBack = 12)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own analytics
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own expense analytics.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             // For now, delegate to the existing method since AnalyticsService needs more work
             // The AnalyticsService methods should be updated to use user-specific data in the future
@@ -264,17 +241,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<BudgetProjection> GetUserBudgetProjectionAsync(Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own budget projection
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own budget projection.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             // For now, delegate to the existing method since AnalyticsService needs more work
             // The AnalyticsService methods should be updated to use user-specific data in the future
@@ -322,12 +289,12 @@ namespace Expense.Tracker.Services.Implementation
     public class TagService : ITagService
     {
         private readonly ITagRepository _tagRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IAuthenticatedUserHelper _userHelper;
 
-        public TagService(ITagRepository tagRepository, ICurrentUserService currentUserService)
+        public TagService(ITagRepository tagRepository, IAuthenticatedUserHelper userHelper)
         {
             _tagRepository = tagRepository;
-            _currentUserService = currentUserService;
+            _userHelper = userHelper;
         }
 
         public async Task<IEnumerable<Tag>> GetAllTagsAsync()
@@ -337,17 +304,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Tag>> GetUserTagsAsync(Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own tags
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own tags.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             // For now, tags are global - but this method ensures proper authorization
             // In a future version, tags could be user-specific
@@ -361,17 +318,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<Tag?> GetUserTagByIdAsync(string id, Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own tags
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own tags.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             // For now, tags are global - but this method ensures proper authorization
             // In a future version, tags could be user-specific
@@ -413,17 +360,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Tag>> GetUserPopularTagsAsync(Guid userId, int limit = 10)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own popular tags
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own popular tags.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             // For now, popular tags are global - but this method ensures proper authorization
             // In a future version, popular tags could be user-specific based on their transaction usage

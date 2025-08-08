@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using BCrypt.Net;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
+using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Services.Implementation;
 
@@ -15,17 +16,20 @@ public class AuthenticationService : IAuthenticationService
     private readonly IUserRepository _userRepository;
     private readonly IUserSessionRepository _sessionRepository;
     private readonly IConfiguration _configuration;
+    private readonly IAuthenticatedUserHelper _userHelper;
     private readonly string _jwtSecret;
     private readonly int _jwtExpiryMinutes;
 
     public AuthenticationService(
         IUserRepository userRepository,
         IUserSessionRepository sessionRepository,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAuthenticatedUserHelper userHelper)
     {
         _userRepository = userRepository;
         _sessionRepository = sessionRepository;
         _configuration = configuration;
+        _userHelper = userHelper;
         
         // Try to get JWT secret from environment variable first, then configuration
         _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") 
@@ -75,7 +79,10 @@ public class AuthenticationService : IAuthenticationService
                 ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
                 IsActive = true
             };
-            await _sessionRepository.CreateSessionAsync(session);
+            var createdSession = await _sessionRepository.CreateSessionAsync(session);
+
+            // Set session cookie for enhanced security
+            _userHelper.SetSessionCookie(createdSession.Id.ToString());
 
             return new AuthenticationResult
             {
@@ -189,6 +196,9 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
+            // Clear session cookie
+            _userHelper.ClearSessionCookie();
+            
             return await _sessionRepository.DeactivateSessionAsync(token);
         }
         catch
@@ -270,6 +280,65 @@ public class AuthenticationService : IAuthenticationService
         catch
         {
             return false;
+        }
+    }
+
+    public async Task<AuthenticationResult> RefreshTokenAsync(string token)
+    {
+        try
+        {
+            // Validate the existing token
+            var isValidToken = await ValidateTokenAsync(token);
+            if (!isValidToken)
+            {
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Invalid or expired token"
+                };
+            }
+
+            // Get user by token
+            var user = await _sessionRepository.GetUserBySessionTokenAsync(token);
+            if (user == null)
+            {
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "User not found"
+                };
+            }
+
+            // Generate new token
+            var newToken = GenerateJwtToken(user.Id, user.Username, user.Email);
+
+            // Deactivate old session
+            await _sessionRepository.DeactivateSessionAsync(token);
+
+            // Create new session
+            var session = new UserSession
+            {
+                UserId = user.Id,
+                Token = newToken,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
+                IsActive = true
+            };
+            await _sessionRepository.CreateSessionAsync(session);
+
+            return new AuthenticationResult
+            {
+                Success = true,
+                Token = newToken,
+                User = MapToUserDto(user)
+            };
+        }
+        catch (Exception ex)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                ErrorMessage = "An error occurred during token refresh"
+            };
         }
     }
 

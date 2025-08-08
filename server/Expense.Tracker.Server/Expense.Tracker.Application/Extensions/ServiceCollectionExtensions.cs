@@ -1,6 +1,7 @@
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Implementation;
 using Expense.Tracker.Services.Repositories;
+using Expense.Tracker.Services.Helpers;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Data;
@@ -41,6 +42,9 @@ namespace Expense.Tracker.Application.Extensions
 
             // Register utility services
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+            // Register helper services
+            services.AddScoped<IAuthenticatedUserHelper, AuthenticatedUserHelper>();
 
             // Register business services as scoped
             services.AddScoped<ICategoryService, CategoryService>();

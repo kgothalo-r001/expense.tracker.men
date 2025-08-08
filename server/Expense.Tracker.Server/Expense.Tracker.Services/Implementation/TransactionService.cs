@@ -1,6 +1,7 @@
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
+using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Services.Implementation
 {
@@ -9,108 +10,61 @@ namespace Expense.Tracker.Services.Implementation
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly ITagRepository _tagRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IAuthenticatedUserHelper _userHelper;
 
         public TransactionService(
             ITransactionRepository transactionRepository,
             ICategoryRepository categoryRepository,
             ITagRepository tagRepository,
-            ICurrentUserService currentUserService)
+            IAuthenticatedUserHelper userHelper)
         {
             _transactionRepository = transactionRepository;
             _categoryRepository = categoryRepository;
             _tagRepository = tagRepository;
-            _currentUserService = currentUserService;
+            _userHelper = userHelper;
         }
 
         public async Task<IEnumerable<Transaction>> GetAllTransactionsAsync()
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-            
-            // Use user-specific method from repository
-            return await _transactionRepository.GetByUserIdAsync(currentUserId.Value);
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
+            return await _transactionRepository.GetByUserIdAsync(currentUserId);
         }
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsAsync(Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-            
-            // Ensure the current user can only access their own transactions
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own transactions.");
-            }
-            
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAsync(userId);
         }
 
         public async Task<Transaction?> GetTransactionByIdAsync(string id)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-            
-            return await _transactionRepository.GetByUserIdAndIdAsync(currentUserId.Value, id);
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
+            return await _transactionRepository.GetByUserIdAndIdAsync(currentUserId, id);
         }
 
         public async Task<Transaction?> GetUserTransactionByIdAsync(string id, Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-            
-            // Ensure the current user can only access their own transactions
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own transactions.");
-            }
-            
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAndIdAsync(userId, id);
         }
 
         public async Task<IEnumerable<Transaction>> GetTransactionsByCategoryAsync(string categoryId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
             // Validate that the category belongs to the current user
-            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId.Value, categoryId);
+            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, categoryId);
             if (category == null)
             {
                 throw new InvalidOperationException($"Category with ID '{categoryId}' does not exist or does not belong to the current user.");
             }
 
-            return await _transactionRepository.GetByUserIdAndCategoryIdAsync(currentUserId.Value, categoryId);
+            return await _transactionRepository.GetByUserIdAndCategoryIdAsync(currentUserId, categoryId);
         }
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsByCategoryAsync(string categoryId, Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own transactions
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own transactions.");
-            }
+            _userHelper.ValidateUserAccess(userId);
 
             // Validate that the category belongs to the user
             var category = await _categoryRepository.GetByUserIdAndIdAsync(userId, categoryId);
@@ -124,42 +78,22 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            return await _transactionRepository.GetByUserIdAndDateRangeAsync(currentUserId.Value, startDate, endDate);
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
+            return await _transactionRepository.GetByUserIdAndDateRangeAsync(currentUserId, startDate, endDate);
         }
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own transactions
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own transactions.");
-            }
-
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAndDateRangeAsync(userId, startDate, endDate);
         }
 
         public async Task<Transaction> CreateTransactionAsync(CreateTransactionRequest request)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
             // Validate category exists and belongs to the current user
-            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId.Value, request.CategoryId);
+            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, request.CategoryId);
             if (category == null)
             {
                 throw new InvalidOperationException($"Category with ID '{request.CategoryId}' does not exist or does not belong to the current user.");
@@ -181,7 +115,7 @@ namespace Expense.Tracker.Services.Implementation
 
             var transaction = new Transaction
             {
-                UserId = currentUserId.Value.ToString(),
+                UserId = currentUserId.ToString(),
                 Amount = request.Amount,
                 Description = request.Description,
                 Date = request.Date,
@@ -207,13 +141,9 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<Transaction?> UpdateTransactionAsync(UpdateTransactionRequest request)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
-            var existingTransaction = await _transactionRepository.GetByUserIdAndIdAsync(currentUserId.Value, request.Id);
+            var existingTransaction = await _transactionRepository.GetByUserIdAndIdAsync(currentUserId, request.Id);
             if (existingTransaction == null)
             {
                 return null;
@@ -222,7 +152,7 @@ namespace Expense.Tracker.Services.Implementation
             // Validate category if provided and ensure it belongs to the current user
             if (!string.IsNullOrEmpty(request.CategoryId))
             {
-                var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId.Value, request.CategoryId);
+                var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, request.CategoryId);
                 if (category == null)
                 {
                     throw new InvalidOperationException($"Category with ID '{request.CategoryId}' does not exist or does not belong to the current user.");
@@ -256,13 +186,9 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<bool> DeleteTransactionAsync(string id)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
-            var transaction = await _transactionRepository.GetByUserIdAndIdAsync(currentUserId.Value, id);
+            var transaction = await _transactionRepository.GetByUserIdAndIdAsync(currentUserId, id);
             if (transaction == null)
             {
                 return false;
@@ -273,29 +199,13 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetRecurringTransactionsAsync()
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            return await _transactionRepository.GetRecurringByUserIdAsync(currentUserId.Value);
+            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
+            return await _transactionRepository.GetRecurringByUserIdAsync(currentUserId);
         }
 
         public async Task<IEnumerable<Transaction>> GetUserRecurringTransactionsAsync(Guid userId)
         {
-            var currentUserId = _currentUserService.GetCurrentUserId();
-            if (currentUserId == null)
-            {
-                throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-
-            // Ensure the current user can only access their own transactions
-            if (currentUserId.Value != userId)
-            {
-                throw new UnauthorizedAccessException("You can only access your own transactions.");
-            }
-
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetRecurringByUserIdAsync(userId);
         }
 
