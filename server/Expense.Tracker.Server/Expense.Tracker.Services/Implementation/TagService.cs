@@ -7,39 +7,23 @@ namespace Expense.Tracker.Services.Implementation
     public class TagService : ITagService
     {
         private readonly ITagRepository _tagRepository;
-        private readonly IAuthenticatedUserHelper _userHelper;
 
-        public TagService(ITagRepository tagRepository, IAuthenticatedUserHelper userHelper)
+        public TagService(ITagRepository tagRepository)
         {
             _tagRepository = tagRepository;
-            _userHelper = userHelper;
         }
 
-        public async Task<IEnumerable<Tag>> GetAllTagsAsync()
+        public async Task<IEnumerable<Tag>> GetAllTagsAsync(Requestor requestor)
         {
             return await _tagRepository.GetAllAsync();
         }
 
-        public async Task<IEnumerable<Tag>> GetUserTagsAsync(Guid userId)
-        {
-            _userHelper.ValidateUserAccess(userId);
-
-            return await _tagRepository.GetAllAsync();
-        }
-
-        public async Task<Tag?> GetTagByIdAsync(string id)
+        public async Task<Tag?> GetTagByIdAsync(string id, Requestor requestor)
         {
             return await _tagRepository.GetByIdAsync(id);
         }
 
-        public async Task<Tag?> GetUserTagByIdAsync(string id, Guid userId)
-        {
-            _userHelper.ValidateUserAccess(userId);
-
-            return await _tagRepository.GetByIdAsync(id);
-        }
-
-        public async Task<Tag> CreateTagAsync(CreateTagRequest request)
+        public async Task<Tag> CreateTagAsync(CreateTagRequest request, Requestor requestor)
         {
             var existingTag = await _tagRepository.GetByNameAsync(request.Name);
             if (existingTag != null)
@@ -57,24 +41,18 @@ namespace Expense.Tracker.Services.Implementation
             return await _tagRepository.CreateAsync(tag);
         }
 
-        public async Task<bool> DeleteTagAsync(string id)
+        public async Task<bool> DeleteTagAsync(string id, Requestor requestor)
         {
             return await _tagRepository.DeleteAsync(id);
         }
 
-        public async Task UpdateTagUsageAsync(string tagName)
+        public async Task UpdateTagUsageAsync(string tagName, Requestor requestor)
         {
             await _tagRepository.IncrementUsageAsync(tagName);
         }
 
-        public async Task<IEnumerable<Tag>> GetPopularTagsAsync(int limit = 10)
+        public async Task<IEnumerable<Tag>> GetPopularTagsAsync(Requestor requestor, int limit = 10)
         {
-            return await _tagRepository.GetPopularAsync(limit);
-        }
-
-        public async Task<IEnumerable<Tag>> GetUserPopularTagsAsync(Guid userId, int limit = 10)
-        {
-            _userHelper.ValidateUserAccess(userId);
             return await _tagRepository.GetPopularAsync(limit);
         }
     }

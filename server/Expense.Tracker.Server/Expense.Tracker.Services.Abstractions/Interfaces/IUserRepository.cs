@@ -16,6 +16,7 @@ public interface IUserSessionRepository
 {
     Task<UserSession> CreateSessionAsync(UserSession session);
     Task<UserSession?> GetSessionByTokenAsync(string token);
+    Task<UserSession?> UpdateSessionTokenAsync(Guid sessionId, string newToken);
     Task<bool> DeactivateSessionAsync(string token);
     Task<bool> ValidateSessionAsync(string token);
     Task<User?> GetUserBySessionTokenAsync(string token);

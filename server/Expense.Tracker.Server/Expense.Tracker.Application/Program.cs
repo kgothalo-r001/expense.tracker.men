@@ -46,15 +46,11 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-// Add cookie JWT middleware before authentication
 app.UseCookieJwt();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Initialize default data
-await app.Services.InitializeExpenseTrackerDataAsync();
 
 app.Run();

@@ -1,25 +1,21 @@
 using Microsoft.Extensions.Logging;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Services.Implementation;
 
 public class SessionService : ISessionService
 {
     private readonly IUserSessionRepository _sessionRepository;
-    private readonly IAuthenticatedUserHelper _userHelper;
     private readonly ITokenService _tokenService;
     private readonly ILogger<SessionService> _logger;
 
     public SessionService(
         IUserSessionRepository sessionRepository,
-        IAuthenticatedUserHelper userHelper,
         ITokenService tokenService,
         ILogger<SessionService> logger)
     {
         _sessionRepository = sessionRepository;
-        _userHelper = userHelper;
         _tokenService = tokenService;
         _logger = logger;
     }
@@ -37,9 +33,6 @@ public class SessionService : ISessionService
             };
 
             var createdSession = await _sessionRepository.CreateSessionAsync(session);
-            
-            // Set session cookie for enhanced security
-            _userHelper.SetSessionCookie(createdSession.Id.ToString());
             
             return createdSession;
         }
@@ -89,7 +82,6 @@ public class SessionService : ISessionService
     {
         try
         {
-            _userHelper.ClearSessionCookie();
             return await _sessionRepository.DeactivateSessionAsync(token);
         }
         catch (Exception ex)
@@ -97,6 +89,19 @@ public class SessionService : ISessionService
             _logger.LogWarning(ex, "Failed to deactivate session for token: {TokenPrefix}", 
                 token[..Math.Min(token.Length, 10)] + "...");
             return false;
+        }
+    }
+
+    public async Task<UserSession?> UpdateSessionTokenAsync(Guid sessionId, string newToken)
+    {
+        try
+        {
+            return await _sessionRepository.UpdateSessionTokenAsync(sessionId, newToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update session token for session: {SessionId}", sessionId);
+            return null;
         }
     }
 

@@ -14,6 +14,16 @@ public interface ITokenService
     string GenerateJwtToken(Guid userId, string username, string email);
 
     /// <summary>
+    /// Generates a JWT token for the specified user with session ID.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="username">The username.</param>
+    /// <param name="email">The user's email address.</param>
+    /// <param name="sessionId">The session ID.</param>
+    /// <returns>A JWT token string.</returns>
+    string GenerateJwtToken(Guid userId, string username, string email, string sessionId);
+
+    /// <summary>
     /// Validates a JWT token without checking session storage.
     /// </summary>
     /// <param name="token">The JWT token to validate.</param>

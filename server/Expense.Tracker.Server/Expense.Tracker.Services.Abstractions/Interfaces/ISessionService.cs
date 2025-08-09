@@ -34,6 +34,14 @@ public interface ISessionService
     Task<bool> DeactivateSessionAsync(string token);
 
     /// <summary>
+    /// Updates the token for an existing session.
+    /// </summary>
+    /// <param name="sessionId">The session ID to update.</param>
+    /// <param name="newToken">The new JWT token.</param>
+    /// <returns>The updated user session.</returns>
+    Task<UserSession?> UpdateSessionTokenAsync(Guid sessionId, string newToken);
+
+    /// <summary>
     /// Refreshes a user session by deactivating the old one and creating a new one.
     /// </summary>
     /// <param name="oldToken">The old session token.</param>

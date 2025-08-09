@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
@@ -8,18 +7,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Expense.Tracker.Peer.Controllers
 {
-    [ApiController]
-    [Authorize]
     [Route($"{ApiConstants.BaseApiRoute}/{ApiConstants.Routes.Tags}")]
-    public class TagsController : ControllerBase
+    public class TagsController : ExpenseManagerBaseController
     {
         private readonly ITagService _tagService;
-        private readonly ILogger<TagsController> _logger;
 
         public TagsController(ITagService tagService, ILogger<TagsController> logger)
+            : base(logger)
         {
             _tagService = tagService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -30,12 +26,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var tags = await _tagService.GetAllTagsAsync();
+                var tags = await _tagService.GetAllTagsAsync(Requestor);
                 return Ok(tags);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving tags");
+                _logger.LogError(ex, "Error retrieving tags for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving tags");
             }
         }
@@ -48,7 +44,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var tag = await _tagService.GetTagByIdAsync(id);
+                var tag = await _tagService.GetTagByIdAsync(id, Requestor);
                 if (tag == null)
                 {
                     return NotFound($"Tag with ID '{id}' not found");
@@ -57,7 +53,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving tag {TagId}", id);
+                _logger.LogError(ex, "Error retrieving tag {TagId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving the tag");
             }
         }
@@ -75,7 +71,7 @@ namespace Expense.Tracker.Peer.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var tag = await _tagService.CreateTagAsync(request);
+                var tag = await _tagService.CreateTagAsync(request, Requestor);
                 return CreatedAtAction(nameof(GetTag), new { id = tag.Id }, tag);
             }
             catch (InvalidOperationException ex)
@@ -84,7 +80,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating tag");
+                _logger.LogError(ex, "Error creating tag for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while creating the tag");
             }
         }
@@ -97,7 +93,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var deleted = await _tagService.DeleteTagAsync(id);
+                var deleted = await _tagService.DeleteTagAsync(id, Requestor);
                 if (!deleted)
                 {
                     return NotFound($"Tag with ID '{id}' not found");
@@ -107,7 +103,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting tag {TagId}", id);
+                _logger.LogError(ex, "Error deleting tag {TagId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while deleting the tag");
             }
         }
@@ -120,12 +116,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var tags = await _tagService.GetPopularTagsAsync(limit);
+                var tags = await _tagService.GetPopularTagsAsync(Requestor, limit);
                 return Ok(tags);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving popular tags");
+                _logger.LogError(ex, "Error retrieving popular tags for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving popular tags");
             }
         }

@@ -7,17 +7,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Expense.Tracker.Peer.Controllers
 {
-    [ApiController]
     [Route($"{ApiConstants.BaseApiRoute}/{ApiConstants.Routes.Analytics}")]
-    public class AnalyticsController : ControllerBase
+    public class AnalyticsController : ExpenseManagerBaseController
     {
         private readonly IAnalyticsService _analyticsService;
-        private readonly ILogger<AnalyticsController> _logger;
 
         public AnalyticsController(IAnalyticsService analyticsService, ILogger<AnalyticsController> logger)
+            : base(logger)
         {
             _analyticsService = analyticsService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -28,12 +26,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var trends = await _analyticsService.GetMonthlySpendingTrendsAsync(monthsBack);
+                var trends = await _analyticsService.GetMonthlySpendingTrendsAsync(Requestor, monthsBack);
                 return Ok(trends);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving monthly spending trends");
+                _logger.LogError(ex, "Error retrieving monthly spending trends for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving monthly spending trends");
             }
         }
@@ -46,12 +44,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var trends = await _analyticsService.GetCategoryTrendsAsync();
+                var trends = await _analyticsService.GetCategoryTrendsAsync(Requestor);
                 return Ok(trends);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving category trends");
+                _logger.LogError(ex, "Error retrieving category trends for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving category trends");
             }
         }
@@ -64,12 +62,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var projection = await _analyticsService.GenerateBudgetProjectionAsync();
+                var projection = await _analyticsService.GenerateBudgetProjectionAsync(Requestor);
                 return Ok(projection);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving budget projection");
+                _logger.LogError(ex, "Error retrieving budget projection for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving budget projection");
             }
         }
@@ -84,12 +82,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var average = await _analyticsService.CalculateMonthlyAverageAsync(type, monthsBack);
+                var average = await _analyticsService.CalculateMonthlyAverageAsync(type, Requestor, monthsBack);
                 return Ok(average);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating monthly average");
+                _logger.LogError(ex, "Error calculating monthly average for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while calculating monthly average");
             }
         }
@@ -102,12 +100,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var projection = await _analyticsService.CalculateYearlyProjectionAsync(type);
+                var projection = await _analyticsService.CalculateYearlyProjectionAsync(type, Requestor);
                 return Ok(projection);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating yearly projection");
+                _logger.LogError(ex, "Error calculating yearly projection for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while calculating yearly projection");
             }
         }

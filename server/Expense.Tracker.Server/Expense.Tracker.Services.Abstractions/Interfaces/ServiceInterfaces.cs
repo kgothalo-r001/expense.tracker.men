@@ -6,66 +6,53 @@ namespace Expense.Tracker.Services.Abstractions.Interfaces
 {
     public interface ICategoryService
     {
-        Task<IEnumerable<Category>> GetAllCategoriesAsync();
-        Task<IEnumerable<Category>> GetUserCategoriesAsync(Guid userId);
-        Task<Category?> GetCategoryByIdAsync(string id);
-        Task<Category?> GetUserCategoryByIdAsync(string id, Guid userId);
-        Task<Category> CreateCategoryAsync(CreateCategoryRequest request);
-        Task<Category?> UpdateCategoryAsync(UpdateCategoryRequest request);
-        Task<bool> DeleteCategoryAsync(string id);
-        Task<bool> CategoryExistsAsync(string id);
-        Task InitializeDefaultCategoriesAsync();
+        Task<IEnumerable<Category>> GetAllCategoriesAsync(Requestor requestor);
+        Task<Category?> GetCategoryByIdAsync(string id, Requestor requestor);
+        Task<Category> CreateCategoryAsync(CreateCategoryRequest request, Requestor requestor);
+        Task<Category?> UpdateCategoryAsync(UpdateCategoryRequest request, Requestor requestor);
+        Task<bool> DeleteCategoryAsync(string id, Requestor requestor);
+        Task<bool> CategoryExistsAsync(string id, Requestor requestor);
+        Task InitializeDefaultCategoriesAsync(Requestor requestor);
     }
 
     public interface ITransactionService
     {
-        Task<IEnumerable<Transaction>> GetAllTransactionsAsync();
-        Task<IEnumerable<Transaction>> GetUserTransactionsAsync(Guid userId);
-        Task<Transaction?> GetTransactionByIdAsync(string id);
-        Task<Transaction?> GetUserTransactionByIdAsync(string id, Guid userId);
-        Task<IEnumerable<Transaction>> GetTransactionsByCategoryAsync(string categoryId);
-        Task<IEnumerable<Transaction>> GetUserTransactionsByCategoryAsync(string categoryId, Guid userId);
-        Task<IEnumerable<Transaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate);
-        Task<IEnumerable<Transaction>> GetUserTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, Guid userId);
-        Task<Transaction> CreateTransactionAsync(CreateTransactionRequest request);
-        Task<Transaction?> UpdateTransactionAsync(UpdateTransactionRequest request);
-        Task<bool> DeleteTransactionAsync(string id);
-        Task<IEnumerable<Transaction>> GetRecurringTransactionsAsync();
-        Task<IEnumerable<Transaction>> GetUserRecurringTransactionsAsync(Guid userId);
-        Task ProcessRecurringTransactionsAsync();
+        Task<IEnumerable<Transaction>> GetAllTransactionsAsync(Requestor requestor);
+        Task<Transaction?> GetTransactionByIdAsync(string id, Requestor requestor);
+        Task<IEnumerable<Transaction>> GetTransactionsByCategoryAsync(string categoryId, Requestor requestor);
+        Task<IEnumerable<Transaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, Requestor requestor);
+        Task<Transaction> CreateTransactionAsync(CreateTransactionRequest request, Requestor requestor);
+        Task<Transaction?> UpdateTransactionAsync(UpdateTransactionRequest request, Requestor requestor);
+        Task<bool> DeleteTransactionAsync(string id, Requestor requestor);
+        Task<IEnumerable<Transaction>> GetRecurringTransactionsAsync(Requestor requestor);
+        Task ProcessRecurringTransactionsAsync(Requestor requestor);
     }
 
     public interface IDashboardService
     {
-        Task<DashboardSummary> GetDashboardSummaryAsync(DateTime? startDate = null, DateTime? endDate = null);
-        Task<DashboardSummary> GetUserDashboardSummaryAsync(Guid userId, DateTime? startDate = null, DateTime? endDate = null);
-        Task<ExpenseAnalytics> GetExpenseAnalyticsAsync(int monthsBack = 12);
-        Task<ExpenseAnalytics> GetUserExpenseAnalyticsAsync(Guid userId, int monthsBack = 12);
-        Task<BudgetProjection> GetBudgetProjectionAsync();
-        Task<BudgetProjection> GetUserBudgetProjectionAsync(Guid userId);
+        Task<DashboardSummary> GetDashboardSummaryAsync(Requestor requestor, DateTime? startDate = null, DateTime? endDate = null);
+        Task<ExpenseAnalytics> GetExpenseAnalyticsAsync(Requestor requestor, int monthsBack = 12);
+        Task<BudgetProjection> GetBudgetProjectionAsync(Requestor requestor);
     }
 
     public interface ITagService
     {
-        Task<IEnumerable<Tag>> GetAllTagsAsync();
-        Task<IEnumerable<Tag>> GetUserTagsAsync(Guid userId);
-        Task<Tag?> GetTagByIdAsync(string id);
-        Task<Tag?> GetUserTagByIdAsync(string id, Guid userId);
-        Task<Tag> CreateTagAsync(CreateTagRequest request);
-        Task<bool> DeleteTagAsync(string id);
-        Task UpdateTagUsageAsync(string tagName);
-        Task<IEnumerable<Tag>> GetPopularTagsAsync(int limit = 10);
-        Task<IEnumerable<Tag>> GetUserPopularTagsAsync(Guid userId, int limit = 10);
+        Task<IEnumerable<Tag>> GetAllTagsAsync(Requestor requestor);
+        Task<Tag?> GetTagByIdAsync(string id, Requestor requestor);
+        Task<Tag> CreateTagAsync(CreateTagRequest request, Requestor requestor);
+        Task<bool> DeleteTagAsync(string id, Requestor requestor);
+        Task UpdateTagUsageAsync(string tagName, Requestor requestor);
+        Task<IEnumerable<Tag>> GetPopularTagsAsync(Requestor requestor, int limit = 10);
     }
 
     public interface IAnalyticsService
     {
-        Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage);
-        Task<decimal> CalculateYearlyProjectionAsync(TransactionType type);
-        Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
-        Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(int monthsBack = AnalyticsConstants.DefaultTrendMonths);
-        Task<IEnumerable<CategoryTrend>> GetCategoryTrendsAsync();
-        Task<BudgetProjection> GenerateBudgetProjectionAsync();
+        Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, Requestor requestor, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage);
+        Task<decimal> CalculateYearlyProjectionAsync(TransactionType type, Requestor requestor);
+        Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, Requestor requestor, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
+        Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(Requestor requestor, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
+        Task<IEnumerable<CategoryTrend>> GetCategoryTrendsAsync(Requestor requestor);
+        Task<BudgetProjection> GenerateBudgetProjectionAsync(Requestor requestor);
     }
 
     public interface IRepository<T> where T : class

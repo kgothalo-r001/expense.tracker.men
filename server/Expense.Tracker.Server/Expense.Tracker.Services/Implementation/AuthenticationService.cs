@@ -50,10 +50,15 @@ public class AuthenticationService : IAuthenticationService
                 };
             }
 
-            var token = _tokenService.GenerateJwtToken(user.Id, user.Username, user.Email);
+            // Create session with a temporary token
+            var tempToken = _tokenService.GenerateJwtToken(user.Id, user.Username, user.Email);
+            var session = await _sessionService.CreateSessionAsync(user.Id, tempToken);
 
-            // Create session using session service
-            var session = await _sessionService.CreateSessionAsync(user.Id, token);
+            // Generate the final token with session ID
+            var token = _tokenService.GenerateJwtToken(user.Id, user.Username, user.Email, session.Id.ToString());
+            
+            // Update the session with the final token
+            await _sessionService.UpdateSessionTokenAsync(session.Id, token);
 
             return new AuthenticationResult
             {

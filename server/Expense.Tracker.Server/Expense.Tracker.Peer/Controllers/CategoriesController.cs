@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
@@ -8,18 +7,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Expense.Tracker.Peer.Controllers
 {
-    [ApiController]
-    [Authorize]
     [Route($"{ApiConstants.BaseApiRoute}/{ApiConstants.Routes.Categories}")]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController : ExpenseManagerBaseController
     {
         private readonly ICategoryService _categoryService;
-        private readonly ILogger<CategoriesController> _logger;
 
-        public CategoriesController(ICategoryService categoryService, ILogger<CategoriesController> logger)
+        public CategoriesController(ICategoryService categoryService, ILogger<CategoriesController> logger) 
+            : base(logger)
         {
             _categoryService = categoryService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -30,12 +26,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var categories = await _categoryService.GetAllCategoriesAsync();
+                var categories = await _categoryService.GetAllCategoriesAsync(Requestor);
                 return Ok(categories);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving categories");
+                _logger.LogError(ex, "Error retrieving categories for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving categories");
             }
         }
@@ -48,7 +44,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var category = await _categoryService.GetCategoryByIdAsync(id);
+                var category = await _categoryService.GetCategoryByIdAsync(id, Requestor);
                 if (category == null)
                 {
                     return NotFound($"Category with ID '{id}' not found");
@@ -57,7 +53,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving category {CategoryId}", id);
+                _logger.LogError(ex, "Error retrieving category {CategoryId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving the category");
             }
         }
@@ -75,7 +71,7 @@ namespace Expense.Tracker.Peer.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var category = await _categoryService.CreateCategoryAsync(request);
+                var category = await _categoryService.CreateCategoryAsync(request, Requestor);
                 return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
             }
             catch (InvalidOperationException ex)
@@ -84,7 +80,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating category");
+                _logger.LogError(ex, "Error creating category for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while creating the category");
             }
         }
@@ -107,7 +103,7 @@ namespace Expense.Tracker.Peer.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var updatedCategory = await _categoryService.UpdateCategoryAsync(request);
+                var updatedCategory = await _categoryService.UpdateCategoryAsync(request, Requestor);
                 if (updatedCategory == null)
                 {
                     return NotFound($"Category with ID '{id}' not found");
@@ -121,7 +117,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating category {CategoryId}", id);
+                _logger.LogError(ex, "Error updating category {CategoryId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while updating the category");
             }
         }
@@ -134,7 +130,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var deleted = await _categoryService.DeleteCategoryAsync(id);
+                var deleted = await _categoryService.DeleteCategoryAsync(id, Requestor);
                 if (!deleted)
                 {
                     return NotFound($"Category with ID '{id}' not found");
@@ -148,7 +144,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting category {CategoryId}", id);
+                _logger.LogError(ex, "Error deleting category {CategoryId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while deleting the category");
             }
         }
@@ -161,12 +157,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                await _categoryService.InitializeDefaultCategoriesAsync();
+                await _categoryService.InitializeDefaultCategoriesAsync(Requestor);
                 return Ok("Default categories initialized successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error initializing default categories");
+                _logger.LogError(ex, "Error initializing default categories for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while initializing default categories");
             }
         }

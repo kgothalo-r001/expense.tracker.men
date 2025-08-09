@@ -11,23 +11,20 @@ namespace Expense.Tracker.Services.Implementation
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IAnalyticsService _analyticsService;
-        private readonly IAuthenticatedUserHelper _userHelper;
 
         public DashboardService(
             ITransactionRepository transactionRepository,
             ICategoryRepository categoryRepository,
-            IAnalyticsService analyticsService,
-            IAuthenticatedUserHelper userHelper)
+            IAnalyticsService analyticsService)
         {
             _transactionRepository = transactionRepository;
             _categoryRepository = categoryRepository;
             _analyticsService = analyticsService;
-            _userHelper = userHelper;
         }
 
-        public async Task<DashboardSummary> GetDashboardSummaryAsync(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<DashboardSummary> GetDashboardSummaryAsync(Requestor requestor, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
+            var currentUserId = Guid.Parse(requestor.UserId);
 
             startDate ??= DateTime.UtcNow.AddMonths(-1).Date;
             endDate ??= DateTime.UtcNow.Date;
@@ -52,39 +49,12 @@ namespace Expense.Tracker.Services.Implementation
             };
         }
 
-        public async Task<DashboardSummary> GetUserDashboardSummaryAsync(Guid userId, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<ExpenseAnalytics> GetExpenseAnalyticsAsync(Requestor requestor, int monthsBack = 12)
         {
-            _userHelper.ValidateUserAccess(userId);
-
-            startDate ??= DateTime.UtcNow.AddMonths(-1).Date;
-            endDate ??= DateTime.UtcNow.Date;
-
-            var transactions = await _transactionRepository.GetByUserIdAndDateRangeAsync(userId, startDate.Value, endDate.Value);
-            var categories = await _categoryRepository.GetByUserIdAsync(userId);
-
-            var totalIncome = transactions.Where(t => t.Type == TransactionType.INCOME).Sum(t => t.Amount);
-            var totalExpenses = transactions.Where(t => t.Type == TransactionType.EXPENSE).Sum(t => t.Amount);
-
-            var topCategories = await GetTopCategoriesAsync(transactions, categories);
-            var recentTransactions = await _transactionRepository.GetRecentByUserIdAsync(userId, BusinessConstants.RecentTransactionsLimit);
-
-            return new DashboardSummary
-            {
-                TotalIncome = totalIncome,
-                TotalExpenses = totalExpenses,
-                NetAmount = totalIncome - totalExpenses,
-                TransactionCount = transactions.Count(),
-                TopCategories = topCategories.ToList(),
-                RecentTransactions = recentTransactions.ToList()
-            };
-        }
-
-        public async Task<ExpenseAnalytics> GetExpenseAnalyticsAsync(int monthsBack = 12)
-        {
-            var monthlyAverage = await _analyticsService.CalculateMonthlyAverageAsync(TransactionType.EXPENSE, monthsBack);
-            var yearlyProjection = await _analyticsService.CalculateYearlyProjectionAsync(TransactionType.EXPENSE);
-            var monthlyTrends = await _analyticsService.GetMonthlySpendingTrendsAsync(monthsBack);
-            var categoryTrends = await _analyticsService.GetCategoryTrendsAsync();
+            var monthlyAverage = await _analyticsService.CalculateMonthlyAverageAsync(TransactionType.EXPENSE, requestor, monthsBack);
+            var yearlyProjection = await _analyticsService.CalculateYearlyProjectionAsync(TransactionType.EXPENSE, requestor);
+            var monthlyTrends = await _analyticsService.GetMonthlySpendingTrendsAsync(requestor, monthsBack);
+            var categoryTrends = await _analyticsService.GetCategoryTrendsAsync(requestor);
 
             return new ExpenseAnalytics
             {
@@ -95,23 +65,9 @@ namespace Expense.Tracker.Services.Implementation
             };
         }
 
-        public async Task<BudgetProjection> GetBudgetProjectionAsync()
+        public async Task<BudgetProjection> GetBudgetProjectionAsync(Requestor requestor)
         {
-            return await _analyticsService.GenerateBudgetProjectionAsync();
-        }
-
-        public async Task<ExpenseAnalytics> GetUserExpenseAnalyticsAsync(Guid userId, int monthsBack = 12)
-        {
-            _userHelper.ValidateUserAccess(userId);
-
-            return await GetExpenseAnalyticsAsync(monthsBack);
-        }
-
-        public async Task<BudgetProjection> GetUserBudgetProjectionAsync(Guid userId)
-        {
-            _userHelper.ValidateUserAccess(userId);
-
-            return await GetBudgetProjectionAsync();
+            return await _analyticsService.GenerateBudgetProjectionAsync(requestor);
         }
 
         private Task<IEnumerable<CategorySummary>> GetTopCategoriesAsync(

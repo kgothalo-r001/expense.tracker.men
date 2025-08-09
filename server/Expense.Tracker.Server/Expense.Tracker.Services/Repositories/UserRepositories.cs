@@ -87,6 +87,19 @@ public class EfUserSessionRepository : IUserSessionRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<UserSession?> UpdateSessionTokenAsync(Guid sessionId, string newToken)
+    {
+        var session = await _context.UserSessions
+            .Where(s => s.Id == sessionId)
+            .FirstOrDefaultAsync();
+
+        if (session == null) return null;
+
+        session.Token = newToken;
+        await _context.SaveChangesAsync();
+        return session;
+    }
+
     public async Task<bool> DeactivateSessionAsync(string token)
     {
         var session = await _context.UserSessions

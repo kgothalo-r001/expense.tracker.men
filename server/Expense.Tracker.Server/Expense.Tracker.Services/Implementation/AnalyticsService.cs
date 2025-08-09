@@ -10,40 +10,37 @@ namespace Expense.Tracker.Services.Implementation
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICategoryRepository _categoryRepository;
-        private readonly IAuthenticatedUserHelper _userHelper;
         private readonly ICalculationStrategyFactory _calculationStrategyFactory;
 
         public AnalyticsService(
             ITransactionRepository transactionRepository, 
             ICategoryRepository categoryRepository, 
-            IAuthenticatedUserHelper userHelper,
             ICalculationStrategyFactory calculationStrategyFactory)
         {
             _transactionRepository = transactionRepository ?? throw new ArgumentNullException(nameof(transactionRepository));
             _categoryRepository = categoryRepository ?? throw new ArgumentNullException(nameof(categoryRepository));
-            _userHelper = userHelper ?? throw new ArgumentNullException(nameof(userHelper));
             _calculationStrategyFactory = calculationStrategyFactory ?? throw new ArgumentNullException(nameof(calculationStrategyFactory));
         }
 
-        public async Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage)
+        public async Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, Requestor requestor, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage)
         {
             var strategy = _calculationStrategyFactory.GetStrategy(CalculationStrategyType.MonthlyAverage);
             return await strategy.CalculateAsync(_transactionRepository, type, monthsBack);
         }
 
-        public async Task<decimal> CalculateYearlyProjectionAsync(TransactionType type)
+        public async Task<decimal> CalculateYearlyProjectionAsync(TransactionType type, Requestor requestor)
         {
             var strategy = _calculationStrategyFactory.GetStrategy(CalculationStrategyType.YearlyProjection);
             return await strategy.CalculateAsync(_transactionRepository, type, AnalyticsConstants.DefaultMonthsBackForAverage);
         }
 
-        public async Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultTrendMonths)
+        public async Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, Requestor requestor, int monthsBack = AnalyticsConstants.DefaultTrendMonths)
         {
             var strategy = _calculationStrategyFactory.GetStrategy(CalculationStrategyType.TrendAnalysis);
             return await strategy.CalculateAsync(_transactionRepository, type, monthsBack);
         }
 
-        public async Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(int monthsBack = AnalyticsConstants.DefaultTrendMonths)
+        public async Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(Requestor requestor, int monthsBack = AnalyticsConstants.DefaultTrendMonths)
         {
             AnalyticsHelpers.ValidateMonthsBack(monthsBack);
 
@@ -78,8 +75,10 @@ namespace Expense.Tracker.Services.Implementation
             }
         }
 
-        public async Task<IEnumerable<CategoryTrend>> GetCategoryTrendsAsync()
+        public async Task<IEnumerable<CategoryTrend>> GetCategoryTrendsAsync(Requestor requestor)
         {
+            var userId = Guid.Parse(requestor.UserId);
+            
             try
             {
                 var currentDate = DateTime.UtcNow.Date;
@@ -126,13 +125,14 @@ namespace Expense.Tracker.Services.Implementation
             }
         }
 
-        public async Task<BudgetProjection> GenerateBudgetProjectionAsync()
+        public async Task<BudgetProjection> GenerateBudgetProjectionAsync(Requestor requestor)
         {
-            var monthlyExpenseAverage = await CalculateMonthlyAverageAsync(TransactionType.EXPENSE, AnalyticsConstants.DefaultMonthsBackForAverage);
-            var monthlyIncomeAverage = await CalculateMonthlyAverageAsync(TransactionType.INCOME, AnalyticsConstants.DefaultMonthsBackForAverage);
+            var userId = Guid.Parse(requestor.UserId);
+            var monthlyExpenseAverage = await CalculateMonthlyAverageAsync(TransactionType.EXPENSE, requestor, AnalyticsConstants.DefaultMonthsBackForAverage);
+            var monthlyIncomeAverage = await CalculateMonthlyAverageAsync(TransactionType.INCOME, requestor, AnalyticsConstants.DefaultMonthsBackForAverage);
             var yearlyExpenseProjection = monthlyExpenseAverage * AnalyticsConstants.MonthsInYear;
 
-            var categories = await _categoryRepository.GetAllAsync();
+            var categories = await _categoryRepository.GetByUserIdAsync(userId);
             var categoryProjections = new List<CategoryProjection>();
 
             foreach (var category in categories)

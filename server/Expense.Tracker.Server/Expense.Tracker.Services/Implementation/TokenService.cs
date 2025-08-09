@@ -43,20 +43,32 @@ public class TokenService : ITokenService
 
     public string GenerateJwtToken(Guid userId, string username, string email)
     {
+        return GenerateJwtToken(userId, username, email, null);
+    }
+
+    public string GenerateJwtToken(Guid userId, string username, string email, string sessionId)
+    {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_jwtSecret);
 
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim("id", userId.ToString()),
+            new Claim("username", username),
+            new Claim("email", email),
+            new Claim(ClaimTypes.Name, username),
+            new Claim(ClaimTypes.Email, email)
+        };
+
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            claims.Add(new Claim("SessionId", sessionId));
+        }
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim("id", userId.ToString()),
-                new Claim("username", username),
-                new Claim("email", email),
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Email, email)
-            }),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(_jwtExpiryMinutes),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };

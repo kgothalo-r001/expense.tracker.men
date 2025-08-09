@@ -99,7 +99,6 @@ namespace Expense.Tracker.Application.Extensions
         private static void RegisterUtilityServices(IServiceCollection services)
         {
             services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<IAuthenticatedUserHelper, AuthenticatedUserHelper>();
         }
 
         /// <summary>

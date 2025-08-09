@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
@@ -8,18 +7,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Expense.Tracker.Peer.Controllers
 {
-    [ApiController]
-    [Authorize]
     [Route($"{ApiConstants.BaseApiRoute}/{ApiConstants.Routes.Dashboard}")]
-    public class DashboardController : ControllerBase
+    public class DashboardController : ExpenseManagerBaseController
     {
         private readonly IDashboardService _dashboardService;
-        private readonly ILogger<DashboardController> _logger;
 
         public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
+            : base(logger)
         {
             _dashboardService = dashboardService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -32,12 +28,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var summary = await _dashboardService.GetDashboardSummaryAsync(startDate, endDate);
+                var summary = await _dashboardService.GetDashboardSummaryAsync(Requestor, startDate, endDate);
                 return Ok(summary);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving dashboard summary");
+                _logger.LogError(ex, "Error retrieving dashboard summary for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving dashboard summary");
             }
         }
@@ -50,12 +46,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var analytics = await _dashboardService.GetExpenseAnalyticsAsync(monthsBack);
+                var analytics = await _dashboardService.GetExpenseAnalyticsAsync(Requestor, monthsBack);
                 return Ok(analytics);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving expense analytics");
+                _logger.LogError(ex, "Error retrieving expense analytics for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving expense analytics");
             }
         }
@@ -68,12 +64,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var projection = await _dashboardService.GetBudgetProjectionAsync();
+                var projection = await _dashboardService.GetBudgetProjectionAsync(Requestor);
                 return Ok(projection);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving budget projection");
+                _logger.LogError(ex, "Error retrieving budget projection for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving budget projection");
             }
         }

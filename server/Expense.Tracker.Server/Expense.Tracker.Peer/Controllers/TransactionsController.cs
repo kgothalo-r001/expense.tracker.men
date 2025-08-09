@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
@@ -8,18 +7,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Expense.Tracker.Peer.Controllers
 {
-    [ApiController]
-    [Authorize]
     [Route($"{ApiConstants.BaseApiRoute}/{ApiConstants.Routes.Transactions}")]
-    public class TransactionsController : ControllerBase
+    public class TransactionsController : ExpenseManagerBaseController
     {
         private readonly ITransactionService _transactionService;
-        private readonly ILogger<TransactionsController> _logger;
 
-        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger)
+        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger) 
+            : base(logger)
         {
             _transactionService = transactionService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -37,22 +33,22 @@ namespace Expense.Tracker.Peer.Controllers
 
                 if (!string.IsNullOrEmpty(categoryId))
                 {
-                    transactions = await _transactionService.GetTransactionsByCategoryAsync(categoryId);
+                    transactions = await _transactionService.GetTransactionsByCategoryAsync(categoryId, Requestor);
                 }
                 else if (startDate.HasValue && endDate.HasValue)
                 {
-                    transactions = await _transactionService.GetTransactionsByDateRangeAsync(startDate.Value, endDate.Value);
+                    transactions = await _transactionService.GetTransactionsByDateRangeAsync(startDate.Value, endDate.Value, Requestor);
                 }
                 else
                 {
-                    transactions = await _transactionService.GetAllTransactionsAsync();
+                    transactions = await _transactionService.GetAllTransactionsAsync(Requestor);
                 }
 
                 return Ok(transactions);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving transactions");
+                _logger.LogError(ex, "Error retrieving transactions for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving transactions");
             }
         }
@@ -65,7 +61,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var transaction = await _transactionService.GetTransactionByIdAsync(id);
+                var transaction = await _transactionService.GetTransactionByIdAsync(id, Requestor);
                 if (transaction == null)
                 {
                     return NotFound($"Transaction with ID '{id}' not found");
@@ -74,7 +70,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving transaction {TransactionId}", id);
+                _logger.LogError(ex, "Error retrieving transaction {TransactionId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving the transaction");
             }
         }
@@ -92,7 +88,7 @@ namespace Expense.Tracker.Peer.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var transaction = await _transactionService.CreateTransactionAsync(request);
+                var transaction = await _transactionService.CreateTransactionAsync(request, Requestor);
                 return CreatedAtAction(nameof(GetTransaction), new { id = transaction.Id }, transaction);
             }
             catch (InvalidOperationException ex)
@@ -101,7 +97,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating transaction");
+                _logger.LogError(ex, "Error creating transaction for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while creating the transaction");
             }
         }
@@ -124,7 +120,7 @@ namespace Expense.Tracker.Peer.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var updatedTransaction = await _transactionService.UpdateTransactionAsync(request);
+                var updatedTransaction = await _transactionService.UpdateTransactionAsync(request, Requestor);
                 if (updatedTransaction == null)
                 {
                     return NotFound($"Transaction with ID '{id}' not found");
@@ -138,7 +134,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating transaction {TransactionId}", id);
+                _logger.LogError(ex, "Error updating transaction {TransactionId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while updating the transaction");
             }
         }
@@ -151,7 +147,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var deleted = await _transactionService.DeleteTransactionAsync(id);
+                var deleted = await _transactionService.DeleteTransactionAsync(id, Requestor);
                 if (!deleted)
                 {
                     return NotFound($"Transaction with ID '{id}' not found");
@@ -161,7 +157,7 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting transaction {TransactionId}", id);
+                _logger.LogError(ex, "Error deleting transaction {TransactionId} for user {UserId}", id, Requestor.UserId);
                 return StatusCode(500, "An error occurred while deleting the transaction");
             }
         }
@@ -174,12 +170,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var transactions = await _transactionService.GetRecurringTransactionsAsync();
+                var transactions = await _transactionService.GetRecurringTransactionsAsync(Requestor);
                 return Ok(transactions);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving recurring transactions");
+                _logger.LogError(ex, "Error retrieving recurring transactions for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while retrieving recurring transactions");
             }
         }
@@ -192,12 +188,12 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                await _transactionService.ProcessRecurringTransactionsAsync();
+                await _transactionService.ProcessRecurringTransactionsAsync(Requestor);
                 return Ok("Recurring transactions processed successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing recurring transactions");
+                _logger.LogError(ex, "Error processing recurring transactions for user {UserId}", Requestor.UserId);
                 return StatusCode(500, "An error occurred while processing recurring transactions");
             }
         }
