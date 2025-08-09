@@ -21,27 +21,31 @@
   "author": "Expense Tracker Team",
   "license": "MIT",
   "dependencies": {
-    "@angular/core": "^19.2.0",
     "@angular/common": "^19.2.0",
-    "rxjs": "~7.8.0",
+    "@angular/core": "^19.2.0",
+    "@angular/router": "^19.2.14",
     "@expense-tracker/abstractions": "file:../abstractions",
+    "@ngrx/effects": "^19.2.1",
+    "@ngrx/store": "^19.2.1",
+    "@angular/platform-browser": "^19.2.0",
     "chart.js": "^4.4.0",
-    "ng2-charts": "^6.0.0"
+    "ng2-charts": "^6.0.0",
+    "rxjs": ">=7.0.0"
   },
   "devDependencies": {
-    "typescript": "~5.7.2",
-    "@types/node": "^20.0.0",
     "@types/jest": "^29.0.0",
-    "jest": "^29.0.0",
-    "ts-jest": "^29.0.0",
-    "eslint": "^8.0.0",
+    "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "nswag": "^14.4.0"
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "nswag": "^14.4.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "~5.7.2"
   },
   "peerDependencies": {
-    "@angular/core": ">=19.0.0",
     "@angular/common": ">=19.0.0",
+    "@angular/core": ">=19.0.0",
     "rxjs": ">=7.0.0"
   }
 }
