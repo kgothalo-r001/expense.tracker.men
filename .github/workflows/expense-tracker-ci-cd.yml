@@ -94,15 +94,15 @@ jobs:
         
     - name: 📦 Install Dependencies
       working-directory: ${{ env.CLIENT_PATH }}
-      run: npm ci
+      run: npm install
       
     - name: 📦 Install Abstraction Dependencies
       working-directory: client/abstractions
-      run: npm ci
+      run: npm install
       
     - name: 📦 Install Business Dependencies  
       working-directory: client/business
-      run: npm ci
+      run: npm install
       
     - name: 🏗️ Build Abstractions
       working-directory: client/abstractions
