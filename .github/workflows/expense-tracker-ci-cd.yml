@@ -96,7 +96,7 @@ jobs:
       working-directory: ${{ env.CLIENT_PATH }}
       run: |
         npm install --legacy-peer-deps
-        npm run genClient
+        npx nswag run nswag.json /runtime:Net90 && node override.js
         npm run build -- --configuration=production
         
     - name: 🚀 Upload Frontend Artifact
