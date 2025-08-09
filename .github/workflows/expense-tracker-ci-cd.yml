@@ -91,18 +91,6 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('client/**/package.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-        
-    - name: 📦 Install & Build Abstractions
-      working-directory: client/abstractions
-      run: |
-        npm install --legacy-peer-deps
-        npm run build
-      
-    - name: 📦 Install & Build Business Layer
-      working-directory: client/business
-      run: |
-        npm install --legacy-peer-deps
-        npm run build
       
     - name: 📦 Install & Build Main Application
       working-directory: ${{ env.CLIENT_PATH }}
