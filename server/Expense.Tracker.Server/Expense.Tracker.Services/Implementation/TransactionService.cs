@@ -1,7 +1,12 @@
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
+using Expense.Tracker.Services.Abstractions.Constants;
 using Expense.Tracker.Services.Helpers;
+using Expense.Tracker.Services.Validators;
+using Expense.Tracker.Services.Factories;
+using Expense.Tracker.Services.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace Expense.Tracker.Services.Implementation
 {
@@ -11,17 +16,26 @@ namespace Expense.Tracker.Services.Implementation
         private readonly ICategoryRepository _categoryRepository;
         private readonly ITagRepository _tagRepository;
         private readonly IAuthenticatedUserHelper _userHelper;
+        private readonly ITransactionValidationService _transactionValidator;
+        private readonly ITransactionFactory _transactionFactory;
+        private readonly ILogger<TransactionService> _logger;
 
         public TransactionService(
             ITransactionRepository transactionRepository,
             ICategoryRepository categoryRepository,
             ITagRepository tagRepository,
-            IAuthenticatedUserHelper userHelper)
+            IAuthenticatedUserHelper userHelper,
+            ITransactionValidationService transactionValidator,
+            ITransactionFactory transactionFactory,
+            ILogger<TransactionService> logger)
         {
             _transactionRepository = transactionRepository;
             _categoryRepository = categoryRepository;
             _tagRepository = tagRepository;
             _userHelper = userHelper;
+            _transactionValidator = transactionValidator;
+            _transactionFactory = transactionFactory;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Transaction>> GetAllTransactionsAsync()
@@ -32,7 +46,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsAsync(Guid userId)
         {
-            _userHelper.ValidateUserAccess(userId);
+            ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAsync(userId);
         }
 
@@ -44,7 +58,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<Transaction?> GetUserTransactionByIdAsync(string id, Guid userId)
         {
-            _userHelper.ValidateUserAccess(userId);
+            ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAndIdAsync(userId, id);
         }
 
@@ -53,25 +67,17 @@ namespace Expense.Tracker.Services.Implementation
             var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
             // Validate that the category belongs to the current user
-            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, categoryId);
-            if (category == null)
-            {
-                throw new InvalidOperationException($"Category with ID '{categoryId}' does not exist or does not belong to the current user.");
-            }
+            await _transactionValidator.ValidateCategoryExistsAsync(currentUserId, categoryId);
 
             return await _transactionRepository.GetByUserIdAndCategoryIdAsync(currentUserId, categoryId);
         }
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsByCategoryAsync(string categoryId, Guid userId)
         {
-            _userHelper.ValidateUserAccess(userId);
+            ValidateUserAccess(userId);
 
             // Validate that the category belongs to the user
-            var category = await _categoryRepository.GetByUserIdAndIdAsync(userId, categoryId);
-            if (category == null)
-            {
-                throw new InvalidOperationException($"Category with ID '{categoryId}' does not exist or does not belong to the user.");
-            }
+            await _transactionValidator.ValidateCategoryExistsAsync(userId, categoryId);
 
             return await _transactionRepository.GetByUserIdAndCategoryIdAsync(userId, categoryId);
         }
@@ -84,59 +90,49 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, Guid userId)
         {
-            _userHelper.ValidateUserAccess(userId);
+            ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAndDateRangeAsync(userId, startDate, endDate);
         }
 
         public async Task<Transaction> CreateTransactionAsync(CreateTransactionRequest request)
         {
-            var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
-
-            // Validate category exists and belongs to the current user
-            var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, request.CategoryId);
-            if (category == null)
+            try
             {
-                throw new InvalidOperationException($"Category with ID '{request.CategoryId}' does not exist or does not belong to the current user.");
-            }
+                var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
-            // Validate recurring transaction settings
-            if (request.IsRecurring)
-            {
-                if (!request.RecurringFrequency.HasValue)
+                // Validate category exists and belongs to the current user
+                await _transactionValidator.ValidateCategoryExistsAsync(currentUserId, request.CategoryId);
+
+                // Validate recurring transaction settings
+                _transactionValidator.ValidateRecurringTransactionSettings(request);
+
+                var transaction = _transactionFactory.CreateTransaction(request, currentUserId.ToString());
+
+                var createdTransaction = await _transactionRepository.CreateAsync(transaction);
+
+                // Update tag usage counts
+                if (transaction.Tags?.Count > 0)
                 {
-                    throw new InvalidOperationException("Recurring frequency is required for recurring transactions.");
+                    var tagTasks = transaction.Tags.Select(tagName => _tagRepository.IncrementUsageAsync(tagName));
+                    await Task.WhenAll(tagTasks);
                 }
 
-                if (request.RecurringEndDate.HasValue && request.RecurringEndDate <= request.Date)
-                {
-                    throw new InvalidOperationException("Recurring end date must be after the transaction date.");
-                }
+                _logger.LogInformation("Created transaction {TransactionId} for user {UserId}", 
+                    createdTransaction.Id, currentUserId);
+
+                return createdTransaction;
             }
-
-            var transaction = new Transaction
+            catch (CategoryNotFoundException ex)
             {
-                UserId = currentUserId.ToString(),
-                Amount = request.Amount,
-                Description = request.Description,
-                Date = request.Date,
-                Type = request.Type,
-                CategoryId = request.CategoryId,
-                Tags = request.Tags ?? new List<string>(),
-                Notes = request.Notes,
-                IsRecurring = request.IsRecurring,
-                RecurringFrequency = request.RecurringFrequency,
-                RecurringEndDate = request.RecurringEndDate
-            };
-
-            var createdTransaction = await _transactionRepository.CreateAsync(transaction);
-
-            // Update tag usage counts
-            foreach (var tagName in transaction.Tags)
-            {
-                await _tagRepository.IncrementUsageAsync(tagName);
+                _logger.LogWarning("Category validation failed for user {UserId}: {Error}", 
+                    await _userHelper.GetAuthenticatedUserIdAsync(), ex.Message);
+                throw;
             }
-
-            return createdTransaction;
+            catch (InvalidRecurringTransactionException ex)
+            {
+                _logger.LogWarning("Recurring transaction validation failed: {Error}", ex.Message);
+                throw;
+            }
         }
 
         public async Task<Transaction?> UpdateTransactionAsync(UpdateTransactionRequest request)
@@ -152,11 +148,7 @@ namespace Expense.Tracker.Services.Implementation
             // Validate category if provided and ensure it belongs to the current user
             if (!string.IsNullOrEmpty(request.CategoryId))
             {
-                var category = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, request.CategoryId);
-                if (category == null)
-                {
-                    throw new InvalidOperationException($"Category with ID '{request.CategoryId}' does not exist or does not belong to the current user.");
-                }
+                await _transactionValidator.ValidateCategoryExistsAsync(currentUserId, request.CategoryId);
             }
 
             // Update only provided fields
@@ -171,7 +163,7 @@ namespace Expense.Tracker.Services.Implementation
             if (!string.IsNullOrEmpty(request.CategoryId))
                 existingTransaction.CategoryId = request.CategoryId;
             if (request.Tags != null)
-                existingTransaction.Tags = request.Tags;
+                existingTransaction.Tags = request.Tags ?? existingTransaction.Tags;
             if (request.Notes != null)
                 existingTransaction.Notes = request.Notes;
             if (request.IsRecurring.HasValue)
@@ -205,7 +197,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserRecurringTransactionsAsync(Guid userId)
         {
-            _userHelper.ValidateUserAccess(userId);
+            ValidateUserAccess(userId);
             return await _transactionRepository.GetRecurringByUserIdAsync(userId);
         }
 
@@ -213,7 +205,6 @@ namespace Expense.Tracker.Services.Implementation
         {
             // This method processes ALL users' recurring transactions
             // It should typically be called by a background service or system process
-            // For now, we'll allow it to work with all recurring transactions
             var recurringTransactions = await _transactionRepository.GetRecurringAsync();
             var today = DateTime.UtcNow.Date;
 
@@ -221,8 +212,11 @@ namespace Expense.Tracker.Services.Implementation
             {
                 if (ShouldCreateRecurringInstance(transaction, today))
                 {
-                    var newTransaction = CreateRecurringInstance(transaction, today);
+                    var newTransaction = _transactionFactory.CreateRecurringInstance(transaction, today);
                     await _transactionRepository.CreateAsync(newTransaction);
+                    
+                    _logger.LogInformation("Created recurring transaction instance {TransactionId} from original {OriginalTransactionId}", 
+                        newTransaction.Id, transaction.Id);
                 }
             }
         }
@@ -262,7 +256,7 @@ namespace Expense.Tracker.Services.Implementation
                 CategoryId = originalTransaction.CategoryId,
                 Tags = new List<string>(originalTransaction.Tags),
                 Notes = originalTransaction.Notes,
-                IsRecurring = false, // Individual instances are not recurring
+                IsRecurring = false,
                 RecurringFrequency = null,
                 RecurringEndDate = null
             };

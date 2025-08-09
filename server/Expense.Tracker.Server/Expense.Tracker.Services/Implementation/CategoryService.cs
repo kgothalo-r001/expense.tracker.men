@@ -3,6 +3,7 @@ using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Helpers;
+using Expense.Tracker.Services.Implementation.Factories;
 
 namespace Expense.Tracker.Services.Implementation
 {
@@ -10,6 +11,7 @@ namespace Expense.Tracker.Services.Implementation
     {
         private readonly ICategoryRepository _categoryRepository;
         private readonly IAuthenticatedUserHelper _userHelper;
+        private static readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
 
         public CategoryService(ICategoryRepository categoryRepository, IAuthenticatedUserHelper userHelper)
         {
@@ -45,34 +47,16 @@ namespace Expense.Tracker.Services.Implementation
         {
             var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
-            // Validate request
-            if (request is null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new ArgumentException("Category name is required.", nameof(request.Name));
-            }
+            ValidationHelper.ValidateNotNull(request, nameof(request));
+            ValidationHelper.ValidateString(request.Name, nameof(request.Name), ValidationHelper.ErrorMessages.CategoryNameRequired);
 
-            // Check if category with same name exists for this user
             var existingCategory = await _categoryRepository.GetByUserIdAndNameAsync(currentUserId, request.Name);
             if (existingCategory != null)
             {
-                throw new InvalidOperationException($"Category with name '{request.Name}' already exists.");
+                throw new InvalidOperationException(string.Format(ValidationHelper.ErrorMessages.CategoryAlreadyExists, request.Name));
             }
 
-            var category = new Category
-            {
-                UserId = currentUserId.ToString(),
-                Name = request.Name,
-                Description = request.Description,
-                Color = request.Color,
-                Icon = request.Icon,
-                Type = request.Type,
-                IsDefault = false
-            };
-
+            var category = CategoryFactory.CreateCategory(request, currentUserId);
             return await _categoryRepository.CreateAsync(category);
         }
 
@@ -80,33 +64,44 @@ namespace Expense.Tracker.Services.Implementation
         {
             var currentUserId = await _userHelper.GetAuthenticatedUserIdAsync();
 
+            ValidationHelper.ValidateNotNull(request, nameof(request));
+            ValidationHelper.ValidateString(request.Id, nameof(request.Id), "Category ID is required.");
+
             var existingCategory = await _categoryRepository.GetByUserIdAndIdAsync(currentUserId, request.Id);
             if (existingCategory == null)
             {
                 return null;
             }
 
-            // Check if another category with the same name exists for this user
             if (!string.IsNullOrEmpty(request.Name))
             {
                 var nameConflict = await _categoryRepository.GetByUserIdAndNameAsync(currentUserId, request.Name);
                 if (nameConflict != null && nameConflict.Id != request.Id)
                 {
-                    throw new InvalidOperationException($"Category with name '{request.Name}' already exists.");
+                    throw new InvalidOperationException(string.Format(ValidationHelper.ErrorMessages.CategoryAlreadyExists, request.Name));
                 }
             }
 
-            // Update only provided fields
             if (!string.IsNullOrEmpty(request.Name))
+            {
                 existingCategory.Name = request.Name;
+            }
             if (!string.IsNullOrEmpty(request.Description))
+            {
                 existingCategory.Description = request.Description;
+            }
             if (!string.IsNullOrEmpty(request.Color))
+            {
                 existingCategory.Color = request.Color;
+            }
             if (!string.IsNullOrEmpty(request.Icon))
+            {
                 existingCategory.Icon = request.Icon;
+            }
             if (request.Type.HasValue)
+            {
                 existingCategory.Type = request.Type.Value;
+            }
 
             return await _categoryRepository.UpdateAsync(existingCategory);
         }
@@ -121,10 +116,9 @@ namespace Expense.Tracker.Services.Implementation
                 return false;
             }
 
-            // Don't allow deletion of default categories
             if (category.IsDefault)
             {
-                throw new InvalidOperationException("Cannot delete default categories.");
+                throw new InvalidOperationException(ValidationHelper.ErrorMessages.CannotDeleteDefaultCategory);
             }
 
             return await _categoryRepository.DeleteAsync(id);
@@ -137,24 +131,24 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task InitializeDefaultCategoriesAsync()
         {
-            var existingCategories = await _categoryRepository.GetAllAsync();
-            if (existingCategories.Any())
+            await _initializationSemaphore.WaitAsync();
+            try
             {
-                return; // Default categories already exist
-            }
-
-            foreach (var (name, color, icon, type) in ApiConstants.DefaultCategories.Categories)
-            {
-                var category = new Category
+                var existingCategories = await _categoryRepository.GetAllAsync();
+                if (existingCategories.Any())
                 {
-                    Name = name,
-                    Color = color,
-                    Icon = icon,
-                    Type = type,
-                    IsDefault = true
-                };
+                    return;
+                }
 
-                await _categoryRepository.CreateAsync(category);
+                var createTasks = ApiConstants.DefaultCategories.Categories
+                    .Select(item => CategoryFactory.CreateDefaultCategory(item.Name, item.Color, item.Icon, item.Type))
+                    .Select(category => _categoryRepository.CreateAsync(category));
+
+                await Task.WhenAll(createTasks);
+            }
+            finally
+            {
+                _initializationSemaphore.Release();
             }
         }
     }
