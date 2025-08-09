@@ -2,8 +2,17 @@
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts"
+  ],
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
+    "noEmit": true,
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -13,12 +22,17 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "importHelpers": true,
-    "target": "ES2022",
-    "module": "ES2022",
+    "target": "es2022",
+    "module": "es2022",
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@expense-tracker/abstractions": ["../abstractions"],
+      "@expense-tracker/abstractions/*": ["../abstractions/*"],
+      "@expense-tracker/business": ["../business"],
+      "@expense-tracker/business/*": ["../business/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

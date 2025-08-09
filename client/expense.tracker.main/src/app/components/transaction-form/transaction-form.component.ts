@@ -11,10 +11,7 @@ import {
   CreateTransactionRequest,
   UpdateTransactionRequest
 } from '../../../../auto/autoexpensetrackerclient';
-import * as CategoryActions from '../../store/';
-import * as TransactionActions from '../../store';
-import { selectAllCategories } from '../../store';
-import { AppState } from '../../store/app.state';
+import { CategoryActions, TransactionActions, selectAllCategories, AppState } from '../../../../../business';
 
 @Component({
   selector: 'app-transaction-form',

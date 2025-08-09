@@ -1,14 +1,12 @@
 import { createReducer, on } from '@ngrx/store';
-import { Category } from '../../../../auto/autoexpensetrackerclient';
+import { Category } from '../../auto/autobusinessclient';
+import { CategoryState } from '@expense-tracker/abstractions';
 import * as CategoryActions from './category.actions';
 
-export interface CategoryState {
-  categories: Category[];
-  loading: boolean;
-  error: string | null;
-}
+// Specialize the generic CategoryState with our Category type
+export type AppCategoryState = CategoryState<Category>;
 
-export const initialState: CategoryState = {
+export const initialState: AppCategoryState = {
   categories: [],
   loading: false,
   error: null

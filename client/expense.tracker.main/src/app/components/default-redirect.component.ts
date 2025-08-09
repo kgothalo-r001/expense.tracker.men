@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DefaultRouteHandler } from '../services/default-route-handler.service';
+import { DefaultRouteHandler } from '@expense-tracker/business';
 
 @Component({
   selector: 'app-default-redirect',

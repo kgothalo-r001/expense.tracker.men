@@ -9,9 +9,7 @@ import {
   CreateCategoryRequestType,
   UpdateCategoryRequest
 } from '../../../../auto/autoexpensetrackerclient';
-import * as CategoryActions from '../../store/category/category.actions';
-import { selectAllCategories, selectCategoryLoading, selectCategoryError } from '../../store';
-import { AppState } from '../../store/app.state';
+import { CategoryActions, selectAllCategories, selectCategoryLoading, selectCategoryError, AppState } from '../../../../../business';
 
 @Component({
   selector: 'app-category-management',

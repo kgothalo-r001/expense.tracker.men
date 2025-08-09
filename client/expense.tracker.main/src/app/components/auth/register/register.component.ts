@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Observable, tap, catchError, of, debounceTime, switchMap } from 'rxjs';
-import { AuthService } from '../../../services/auth.service';
-import { API_CLIENT } from '../../../app.config';
+import { AuthService } from '@expense-tracker/business';
 import { RegisterRequest, IClient } from '../../../../../auto/autoexpensetrackerclient';
+import { API_CLIENT } from '../../../app.config';
 
 function passwordMatchValidator(control: AbstractControl): { [key: string]: any } | null {
   const password = control.get('password');

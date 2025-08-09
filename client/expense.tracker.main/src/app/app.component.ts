@@ -5,7 +5,7 @@ import { filter, map, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
 import { ThemeService } from './services/theme.service';
-import { AuthService } from './services/auth.service';
+import { AuthService } from '../../../business';
 import { UserDto } from '../../auto/autoexpensetrackerclient';
 
 @Component({

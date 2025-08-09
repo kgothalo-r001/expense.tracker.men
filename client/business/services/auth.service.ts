@@ -2,8 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { API_CLIENT } from '../app.config';
-import { IClient, LoginRequest, RegisterRequest, UserDto, AuthenticationResult } from '../../../auto/autoexpensetrackerclient';
+import { API_CLIENT } from '../config';
+import { IClient, LoginRequest, RegisterRequest, UserDto, AuthenticationResult } from '../auto/autobusinessclient';
 
 @Injectable({
   providedIn: 'root'

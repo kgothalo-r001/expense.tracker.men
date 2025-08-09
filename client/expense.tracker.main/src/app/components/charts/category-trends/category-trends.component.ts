@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit, Input, ViewChild, ElementRef, OnDestr
 import { CommonModule } from '@angular/common';
 import { Chart, ChartConfiguration, ChartType, registerables, TooltipItem } from 'chart.js';
 import { Client } from '../../../../../auto/autoexpensetrackerclient';
-import { CategoryService } from '../../../services/category.service';
+import { CategoryService } from '@expense-tracker/business';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 
 Chart.register(...registerables);

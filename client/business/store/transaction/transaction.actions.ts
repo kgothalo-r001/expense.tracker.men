@@ -1,5 +1,5 @@
 import { createAction, props } from '@ngrx/store';
-import { Transaction, CreateTransactionRequest, UpdateTransactionRequest } from '../../../../auto/autoexpensetrackerclient';
+import { Transaction, CreateTransactionRequest, UpdateTransactionRequest } from '../../auto/autobusinessclient';
 
 // Load Actions
 export const loadTransactions = createAction('[Transaction] Load Transactions');

@@ -8,7 +8,7 @@ import {
   MonthlySpending, 
   CategoryTrend 
 } from '../../../../auto/autoexpensetrackerclient';
-import { DashboardService } from '../../services/dashboard.service';
+import { DashboardService } from '../../../../../business';
 import { MonthlySpendingTrendsComponent } from '../charts/monthly-spending-trends/monthly-spending-trends.component';
 import { CategoryTrendsComponent } from '../charts/category-trends/category-trends.component';
 import { BudgetProjectionComponent } from '../charts/budget-projection/budget-projection.component';

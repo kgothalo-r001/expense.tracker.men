@@ -24,12 +24,10 @@ public class CookieJwtMiddleware
         // Check if there's already an Authorization header
         if (!context.Request.Headers.ContainsKey("Authorization"))
         {
-            // Try to get token from cookie
             var token = context.Request.Cookies[AuthCookieName];
             
             if (!string.IsNullOrEmpty(token))
             {
-                // Add the token to the Authorization header for JWT middleware to process
                 context.Request.Headers.Add("Authorization", $"Bearer {token}");
             }
         }

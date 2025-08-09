@@ -1,5 +1,5 @@
 import { createAction, props } from '@ngrx/store';
-import { Category } from '../../../../auto/autoexpensetrackerclient';
+import { Category } from '../../auto/autobusinessclient';
 
 // Load categories
 export const loadCategories = createAction('[Category] Load Categories');

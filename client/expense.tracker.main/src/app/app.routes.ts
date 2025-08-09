@@ -6,7 +6,7 @@ import { SignInComponent } from './components/auth/sign-in/sign-in.component';
 import { RegisterComponent } from './components/auth/register/register.component';
 import { AccountComponent } from './components/account/account.component';
 import { DefaultRedirectComponent } from './components/default-redirect.component';
-import { authGuard, noAuthGuard } from './guards';
+import { authGuard, noAuthGuard } from '../../../business';
 
 export const routes: Routes = [
   { path: '', component: DefaultRedirectComponent },
