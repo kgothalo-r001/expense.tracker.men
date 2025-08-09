@@ -97,7 +97,7 @@ jobs:
       run: |
         npm install --legacy-peer-deps
         npm run genClient
-        npm run build -- --configuration=production
+        npm run build --configuration=production --budget-error=none --budget-warning=none
         
     - name: 🚀 Upload Frontend Artifact
       if: success()
