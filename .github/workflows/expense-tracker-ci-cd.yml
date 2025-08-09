@@ -13,7 +13,7 @@ on:
 
 env:
   # .NET Configuration
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '9.0.x'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   
@@ -96,6 +96,7 @@ jobs:
       working-directory: ${{ env.CLIENT_PATH }}
       run: |
         npm install --legacy-peer-deps
+        npm run genClient
         npm run build -- --configuration=production
         
     - name: 🚀 Upload Frontend Artifact
