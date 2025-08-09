@@ -44,26 +44,29 @@
       </div>
     </div>
 
-    <!-- Category Breakdown -->
-    <div class="category-breakdown">
-      <h2>Top Spending Categories</h2>
-      <div class="category-list">
-        <div 
-          class="category-item" 
-          *ngFor="let category of summary.topCategories"
-        >
-          <div class="category-info">
-            <span class="category-name">{{ category.categoryName }}</span>
-            <span class="category-amount">{{ category.totalAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
-          </div>
-          <div class="category-bar">
-            <div 
-              class="category-fill" 
-              [style.width.%]="category.percentage"
-            ></div>
-          </div>
-          <span class="transaction-count">{{ category.transactionCount }} transactions</span>
-        </div>
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <!-- Monthly Spending Trends Chart -->
+      <div class="chart-wrapper">
+        <app-monthly-spending-trends 
+          [monthsBack]="12"
+          height="350px">
+        </app-monthly-spending-trends>
+      </div>
+
+      <!-- Category Distribution Chart -->
+      <div class="chart-wrapper">
+        <app-category-trends 
+          [chartType]="'doughnut'"
+          height="350px">
+        </app-category-trends>
+      </div>
+
+      <!-- Budget Projection Chart -->
+      <div class="chart-wrapper full-width">
+        <app-budget-projection 
+          height="400px">
+        </app-budget-projection>
       </div>
     </div>
 
@@ -84,67 +87,6 @@
           </div>
           <div class="transaction-date">
             {{ transaction.date | date:'shortDate' }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Expense Analytics -->
-    <div class="analytics-section" *ngIf="expenseAnalytics$ | async as analytics">
-      <h2>Expense Analytics</h2>
-      <div class="analytics-cards">
-        <div class="analytics-card">
-          <h3>Monthly Average</h3>
-          <p class="amount">{{ analytics.monthlyAverage | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
-        </div>
-        <div class="analytics-card">
-          <h3>Yearly Projection</h3>
-          <p class="amount">{{ analytics.yearlyProjection | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Budget Projection -->
-    <div class="budget-section" *ngIf="budgetProjection$ | async as budget">
-      <h2>Budget Projection</h2>
-      <div class="budget-cards">
-        <div class="budget-card">
-          <h3>Projected Monthly Expenses</h3>
-          <p class="amount">{{ budget.projectedMonthlyExpenses | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
-        </div>
-        <div class="budget-card">
-          <h3>Recommended Monthly Savings</h3>
-          <p class="amount positive">{{ budget.recommendedMonthlySavings | currency:'R':'symbol':'1.2-2':'en-ZA' }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Monthly Spending Trends -->
-    <div class="trends-section" *ngIf="monthlySpendingTrends$ | async as trends">
-      <h2>Monthly Spending Trends</h2>
-      <div class="trends-chart">
-        <div class="trend-item" *ngFor="let trend of trends">
-          <span class="trend-month">{{ trend.month }}</span>
-          <span class="trend-amount">{{ trend.amount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
-          <span class="trend-count">{{ trend.transactionCount }} transactions</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Category Trends -->
-    <div class="category-trends-section" *ngIf="categoryTrends$ | async as categoryTrends">
-      <h2>Category Trends</h2>
-      <div class="category-trends">
-        <div class="category-trend-item" *ngFor="let trend of categoryTrends">
-          <div class="trend-info">
-            <span class="trend-category">{{ trend.categoryName }}</span>
-            <span class="trend-change" [class.positive]="trend.percentageChange! >= 0" [class.negative]="trend.percentageChange! < 0">
-              {{ trend.percentageChange! >= 0 ? '+' : '' }}{{ trend.percentageChange | number:'1.1-1' }}%
-            </span>
-          </div>
-          <div class="trend-amounts">
-            <span class="previous-amount">Previous: {{ trend.previousMonthAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
-            <span class="current-amount">Current: {{ trend.currentMonthAmount | currency:'R':'symbol':'1.2-2':'en-ZA' }}</span>
           </div>
         </div>
       </div>

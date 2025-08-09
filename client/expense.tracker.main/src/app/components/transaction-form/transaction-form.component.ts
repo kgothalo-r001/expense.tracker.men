@@ -163,7 +163,10 @@ export class TransactionFormComponent implements OnInit, OnChanges {
         }));
       }
 
-      this.transactionSaved.emit(this.transaction || {} as Transaction);
+      this.transactionSaved.emit({
+        ...transactionData,
+        id: this.transaction?.id
+      } as Transaction);
       this.resetForm();
       this.isSubmitting = false;
     }
@@ -176,10 +179,10 @@ export class TransactionFormComponent implements OnInit, OnChanges {
 
   private resetForm(): void {
     this.transactionForm.reset({
-      type: TransactionType.EXPENSE, // EXPENSE
+      type: TransactionType.EXPENSE,
       date: new Date().toISOString().split('T')[0],
       isRecurring: false,
-      recurringFrequency: RecurringFrequency.MONTHLY // MONTHLY
+      recurringFrequency: RecurringFrequency.MONTHLY
     });
     this.errorMessage = '';
   }

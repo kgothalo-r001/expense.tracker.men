@@ -9,11 +9,19 @@ import {
   CategoryTrend 
 } from '../../../../auto/autoexpensetrackerclient';
 import { DashboardService } from '../../services/dashboard.service';
+import { MonthlySpendingTrendsComponent } from '../charts/monthly-spending-trends/monthly-spending-trends.component';
+import { CategoryTrendsComponent } from '../charts/category-trends/category-trends.component';
+import { BudgetProjectionComponent } from '../charts/budget-projection/budget-projection.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    MonthlySpendingTrendsComponent,
+    CategoryTrendsComponent,
+    BudgetProjectionComponent
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.less'
 })

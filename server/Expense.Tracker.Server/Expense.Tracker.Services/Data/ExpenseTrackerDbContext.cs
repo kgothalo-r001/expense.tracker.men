@@ -41,11 +41,10 @@ namespace Expense.Tracker.Services.Data
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
                 entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
 
-                // Map UserId property to user_id column
-                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired().HasMaxLength(36)
+                entity.Property(e => e.UserId).HasColumnName("user_id").HasMaxLength(36)
                     .HasConversion(
-                        v => Guid.Parse(v),
-                        v => v.ToString());
+                        v => v != null ? Guid.Parse(v) : (Guid?)null,
+                        v => v.HasValue ? v.Value.ToString() : null);
 
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.Type);

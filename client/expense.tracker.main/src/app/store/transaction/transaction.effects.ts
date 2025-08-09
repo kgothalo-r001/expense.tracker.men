@@ -59,9 +59,26 @@ export class TransactionEffects {
         
         return this.client.createTransaction(request).pipe(
           map(transaction => TransactionActions.addTransactionSuccess({ transaction })),
-          catchError(error => of(TransactionActions.addTransactionFailure({ 
-            error: error.message || 'Failed to create transaction' 
-          })))
+          catchError(error => {
+            if (error.status === 201 || error.status === '201') {
+              if (error.response) {
+                try {
+                  const transaction = JSON.parse(error.response);
+                  return of(TransactionActions.addTransactionSuccess({ transaction }));
+                } catch (parseError) {
+                }
+              }
+            }
+            
+            let errorMessage = 'Failed to create transaction';
+            if (error.message) {
+              errorMessage = error.message;
+            } else if (error.error?.message) {
+              errorMessage = error.error.message;
+            }
+            
+            return of(TransactionActions.addTransactionFailure({ error: errorMessage }));
+          })
         );
       })
     )

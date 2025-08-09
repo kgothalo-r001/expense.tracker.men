@@ -1,0 +1,350 @@
+.budget-projection-chart {
+  background: var(--surface-50);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+
+      .chart-title {
+        color: var(--text-primary);
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        margin: 0;
+        font-family: var(--font-family-primary);
+      }
+
+      .budget-health {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+
+        .health-label {
+          color: var(--text-secondary);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+        }
+
+        .health-indicator {
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-bold);
+          text-transform: capitalize;
+        }
+      }
+    }
+
+    .chart-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+
+      .period-selector {
+        display: flex;
+        background: var(--surface-100);
+        border-radius: var(--border-radius-md);
+        padding: 2px;
+
+        .period-btn {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+          border-radius: calc(var(--border-radius-md) - 2px);
+          transition: all 0.2s ease;
+          cursor: pointer;
+
+          &:hover {
+            background: var(--surface-200);
+            color: var(--text-primary);
+          }
+
+          &.active {
+            background: var(--primary-500);
+            color: white;
+            box-shadow: var(--shadow-xs);
+          }
+        }
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        background: var(--surface-100);
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: var(--surface-200);
+          color: var(--text-primary);
+          border-color: var(--primary-300);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .icon {
+          font-size: var(--font-size-sm);
+          transition: transform 0.3s ease;
+
+          &.spinning {
+            animation: spin 1s linear infinite;
+          }
+        }
+      }
+
+      .btn-primary {
+        background: var(--primary-500);
+        color: var(--text-on-primary);
+        border-color: var(--primary-500);
+
+        &:hover:not(:disabled) {
+          background: var(--primary-600);
+          border-color: var(--primary-600);
+        }
+      }
+    }
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    background: var(--surface-0);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    margin-bottom: var(--spacing-lg);
+
+    .chart-canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .chart-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--primary-500);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: var(--spacing-md);
+      }
+
+      .loading-text {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-secondary);
+        margin: 0;
+      }
+    }
+
+    .chart-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: var(--spacing-xl);
+
+      .error-icon {
+        font-size: 48px;
+        margin-bottom: var(--spacing-md);
+        opacity: 0.7;
+      }
+
+      .error-message {
+        color: var(--error-500);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .btn {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        background: var(--primary-500);
+        color: var(--text-on-primary);
+        border: none;
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background: var(--primary-600);
+        }
+      }
+    }
+  }
+
+  .budget-summary {
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--spacing-md);
+
+      .summary-card {
+        background: var(--surface-0);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        padding: var(--spacing-md);
+        transition: all 0.2s ease;
+
+        &:hover {
+          box-shadow: var(--shadow-sm);
+          transform: translateY(-1px);
+        }
+
+        &.income {
+          border-left: 4px solid #22c55e;
+          
+          .card-value {
+            color: #22c55e;
+          }
+        }
+
+        &.expenses {
+          border-left: 4px solid #ef4444;
+          
+          .card-value {
+            color: #ef4444;
+          }
+        }
+
+        &.savings {
+          border-left: 4px solid #3b82f6;
+          
+          .card-value {
+            color: #3b82f6;
+          }
+        }
+
+        &.variance {
+          border-left: 4px solid #f59e0b;
+          
+          .card-value {
+            color: #f59e0b;
+          }
+        }
+
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          margin-bottom: var(--spacing-xs);
+
+          .card-icon {
+            font-size: var(--font-size-lg);
+          }
+
+          .card-title {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+          }
+        }
+
+        .card-value {
+          font-size: var(--font-size-lg);
+          font-weight: var(--font-weight-bold);
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: var(--spacing-md);
+
+    .chart-header {
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      align-items: stretch;
+
+      .header-content {
+        align-items: center;
+        text-align: center;
+      }
+
+      .chart-controls {
+        justify-content: center;
+      }
+    }
+
+    .budget-summary {
+      .summary-cards {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--spacing-sm);
+
+        .summary-card {
+          padding: var(--spacing-sm);
+
+          .card-header {
+            .card-title {
+              font-size: var(--font-size-xs);
+            }
+          }
+
+          .card-value {
+            font-size: var(--font-size-md);
+          }
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .chart-container {
+      min-height: 250px;
+    }
+
+    .budget-summary {
+      .summary-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+// Keyframe animations
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

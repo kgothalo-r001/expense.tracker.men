@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Expense.Tracker.Services.Abstractions.Interfaces;
+using Expense.Tracker.Services.Helpers;
 using System.Security.Claims;
 
 namespace Expense.Tracker.Services.Helpers
@@ -48,21 +49,7 @@ namespace Expense.Tracker.Services.Helpers
 
         public async Task<Guid> GetAuthenticatedUserIdAsync()
         {
-            var userId = GetAuthenticatedUserId();
-            
-            // Validate session if we have HTTP context
-            var sessionId = GetSessionId();
-            if (!string.IsNullOrEmpty(sessionId))
-            {
-                var isValid = await _sessionRepository.ValidateSessionAsync(sessionId);
-                if (!isValid)
-                {
-                    ClearSessionCookie();
-                    throw new UnauthorizedAccessException("Session has expired or is invalid. Please log in again.");
-                }
-            }
-            
-            return userId;
+            return GetAuthenticatedUserId();
         }
 
         public void ValidateUserAccess(Guid requestedUserId)
@@ -96,14 +83,8 @@ namespace Expense.Tracker.Services.Helpers
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
             
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // Use HTTPS in production
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.Add(_sessionTimeout),
-                Path = "/"
-            };
+            var cookieOptions = CookieHelper.GetSecureCookieOptions();
+            cookieOptions.Expires = DateTime.UtcNow.Add(_sessionTimeout);
             
             httpContext.Response.Cookies.Append("ExpenseTracker_SessionId", sessionId, cookieOptions);
         }
@@ -113,16 +94,7 @@ namespace Expense.Tracker.Services.Helpers
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
             
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(-1), // Expire immediately
-                Path = "/"
-            };
-            
-            httpContext.Response.Cookies.Append("ExpenseTracker_SessionId", "", cookieOptions);
+            httpContext.Response.Cookies.Append("ExpenseTracker_SessionId", "", CookieHelper.GetExpiredCookieOptions());
         }
     }
 }

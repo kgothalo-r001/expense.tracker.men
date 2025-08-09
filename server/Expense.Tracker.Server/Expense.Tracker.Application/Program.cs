@@ -1,4 +1,5 @@
 using Expense.Tracker.Application.Extensions;
+using Expense.Tracker.Application.Middleware;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Npgsql;
 
@@ -19,7 +20,9 @@ builder.Services.AddExpenseTrackerHealthChecks();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-var corsPolicy = app.Environment.IsDevelopment() ? "ExpenseTrackerCorsPolicy" : "ExpenseTrackerCorsProduction";
+var corsPolicy = app.Environment.IsDevelopment() 
+    ? CorsServiceExtensions.ExpenseTrackerCorsPolicyName 
+    : CorsServiceExtensions.ExpenseTrackerCorsProductionPolicyName;
 app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())
@@ -43,9 +46,15 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+// Add cookie JWT middleware before authentication
+app.UseCookieJwt();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Initialize default data
+await app.Services.InitializeExpenseTrackerDataAsync();
 
 app.Run();

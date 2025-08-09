@@ -1,0 +1,98 @@
+<div class="budget-projection-chart">
+  <div class="chart-header">
+    <div class="header-content">
+      <h3 class="chart-title">Budget Projection</h3>
+    </div>
+    <div class="chart-controls">
+      <div class="period-selector">
+        <button 
+          class="period-btn" 
+          [class.active]="selectedPeriod === 'weekly'"
+          (click)="setPeriod('weekly')">
+          Weekly
+        </button>
+        <button 
+          class="period-btn" 
+          [class.active]="selectedPeriod === 'monthly'"
+          (click)="setPeriod('monthly')">
+          Monthly
+        </button>
+        <button 
+          class="period-btn" 
+          [class.active]="selectedPeriod === 'yearly'"
+          (click)="setPeriod('yearly')">
+          Yearly
+        </button>
+      </div>
+      <button 
+        class="btn btn-secondary btn-sm"
+        (click)="refreshChart()"
+        [disabled]="isLoading"
+        title="Refresh chart data">
+        <span class="icon" [class.spinning]="isLoading">🔄</span>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="chart-container" [style.height]="height">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="chart-loading">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading budget projection...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="hasError && !isLoading" class="chart-error">
+      <div class="error-icon">⚠️</div>
+      <p class="error-message">{{ errorMessage }}</p>
+      <button class="btn btn-primary btn-sm" (click)="refreshChart()">
+        Try Again
+      </button>
+    </div>
+
+    <!-- Chart Canvas -->
+    <canvas 
+      #chartCanvas
+      *ngIf="!isLoading && !hasError"
+      class="chart-canvas">
+    </canvas>
+  </div>
+
+  <!-- Budget Summary -->
+  <div class="budget-summary" *ngIf="!isLoading && !hasError && budgetData">
+    <div class="summary-cards">
+      <div class="summary-card income">
+        <div class="card-header">
+          <span class="card-icon">💰</span>
+          <span class="card-title">Recommended Monthly Savings</span>
+        </div>
+        <div class="card-value">{{ getFormattedAmount(budgetData.recommendedMonthlySavings || 0) }}</div>
+      </div>
+      
+      <div class="summary-card expenses">
+        <div class="card-header">
+          <span class="card-icon">💸</span>
+          <span class="card-title">Projected Monthly Expenses</span>
+        </div>
+        <div class="card-value">{{ getFormattedAmount(budgetData.projectedMonthlyExpenses || 0) }}</div>
+      </div>
+      
+      <div class="summary-card savings">
+        <div class="card-header">
+          <span class="card-icon">🏦</span>
+          <span class="card-title">Projected Yearly Expenses</span>
+        </div>
+        <div class="card-value">{{ getFormattedAmount(budgetData.projectedYearlyExpenses || 0) }}</div>
+      </div>
+      
+      <div class="summary-card variance">
+        <div class="card-header">
+          <span class="card-icon">📊</span>
+          <span class="card-title">Categories Analyzed</span>
+        </div>
+        <div class="card-value">{{ (budgetData.categoryProjections?.length || 0) }}</div>
+      </div>
+    </div>
+  </div>
+</div>

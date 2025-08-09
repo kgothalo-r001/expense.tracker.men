@@ -29,6 +29,14 @@ export class AppComponent implements OnInit, OnDestroy {
     // Initialize system theme listener
     this.themeService.initSystemThemeListener();
     
+    // Initialize session from server-side cookie
+    this.authService.checkSession().subscribe({
+      next: (isAuthenticated) => {
+      },
+      error: (error) => {
+      }
+    });
+    
     this.router.events
       .pipe(
         filter(event => event instanceof NavigationEnd),

@@ -89,14 +89,8 @@ export class TransactionListComponent implements OnInit {
   }
 
   onTransactionSaved(transaction: Transaction): void {
-    if (this.isEditMode && transaction.id) {
-      this.store.dispatch(TransactionActions.updateTransaction({ 
-        id: transaction.id, 
-        transaction: transaction as any
-      }));
-    } else {
-      this.store.dispatch(TransactionActions.addTransaction({ transaction: transaction as any }));
-    }
+    // Transaction form component already dispatches the action to the store
+    // Just close the modal and reset state
     this.showTransactionModal = false;
     this.selectedTransaction = null;
     this.isEditMode = false;

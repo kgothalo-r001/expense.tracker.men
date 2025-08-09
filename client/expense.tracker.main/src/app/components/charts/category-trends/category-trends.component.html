@@ -1,0 +1,75 @@
+<div class="category-trends-chart">
+  <div class="chart-header">
+    <h3 class="chart-title">Category Spending Distribution</h3>
+    <div class="chart-controls">
+      <button 
+        class="btn btn-secondary btn-sm"
+        (click)="toggleChartType()"
+        [disabled]="isLoading"
+        title="Toggle chart type">
+        <span class="icon">{{ chartType === 'pie' ? '🍩' : '🥧' }}</span>
+        {{ chartType === 'pie' ? 'Doughnut' : 'Pie' }}
+      </button>
+      <button 
+        class="btn btn-secondary btn-sm"
+        (click)="refreshChart()"
+        [disabled]="isLoading"
+        title="Refresh chart data">
+        <span class="icon" [class.spinning]="isLoading">🔄</span>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="chart-content">
+    <div class="chart-container" [style.height]="height">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="chart-loading">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading category trends...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="hasError && !isLoading" class="chart-error">
+        <div class="error-icon">⚠️</div>
+        <p class="error-message">{{ errorMessage }}</p>
+        <button class="btn btn-primary btn-sm" (click)="refreshChart()">
+          Try Again
+        </button>
+      </div>
+
+      <!-- Chart Canvas -->
+      <canvas 
+        #chartCanvas
+        *ngIf="!isLoading && !hasError"
+        class="chart-canvas">
+      </canvas>
+    </div>
+
+    <!-- Category Summary -->
+    <div class="category-summary" *ngIf="!isLoading && !hasError && categoryData.length > 0">
+      <h4 class="summary-title">Category Breakdown</h4>
+      <div class="summary-total">
+        <span class="total-label">Total Spending:</span>
+        <span class="total-amount">{{ getFormattedAmount(getTotalAmount()) }}</span>
+      </div>
+      <div class="category-list">
+        <div 
+          *ngFor="let category of categoryData; trackBy: trackByCategory"
+          class="category-item">
+          <div class="category-info">
+            <span 
+              class="category-color"
+              [style.background-color]="category.color">
+            </span>
+            <span class="category-name">{{ category.category }}</span>
+          </div>
+          <div class="category-values">
+            <span class="category-amount">{{ getFormattedAmount(category.amount) }}</span>
+            <span class="category-percentage">{{ category.percentage.toFixed(1) }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

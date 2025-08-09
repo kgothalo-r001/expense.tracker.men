@@ -46,7 +46,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsAsync(Guid userId)
         {
-            ValidateUserAccess(userId);
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAsync(userId);
         }
 
@@ -58,7 +58,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<Transaction?> GetUserTransactionByIdAsync(string id, Guid userId)
         {
-            ValidateUserAccess(userId);
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAndIdAsync(userId, id);
         }
 
@@ -74,7 +74,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsByCategoryAsync(string categoryId, Guid userId)
         {
-            ValidateUserAccess(userId);
+            _userHelper.ValidateUserAccess(userId);
 
             // Validate that the category belongs to the user
             await _transactionValidator.ValidateCategoryExistsAsync(userId, categoryId);
@@ -90,7 +90,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, Guid userId)
         {
-            ValidateUserAccess(userId);
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetByUserIdAndDateRangeAsync(userId, startDate, endDate);
         }
 
@@ -197,7 +197,7 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<IEnumerable<Transaction>> GetUserRecurringTransactionsAsync(Guid userId)
         {
-            ValidateUserAccess(userId);
+            _userHelper.ValidateUserAccess(userId);
             return await _transactionRepository.GetRecurringByUserIdAsync(userId);
         }
 

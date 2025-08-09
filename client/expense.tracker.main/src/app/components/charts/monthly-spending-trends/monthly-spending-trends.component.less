@@ -1,0 +1,238 @@
+.monthly-spending-trends-chart {
+  background: var(--surface-50);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+
+    .chart-title {
+      color: var(--text-primary);
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      margin: 0;
+      font-family: var(--font-family-primary);
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: var(--spacing-sm);
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        background: var(--surface-100);
+        color: var(--text-secondary);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: var(--surface-200);
+          color: var(--text-primary);
+          border-color: var(--primary-300);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .icon {
+          font-size: var(--font-size-sm);
+          transition: transform 0.3s ease;
+
+          &.spinning {
+            animation: spin 1s linear infinite;
+          }
+        }
+      }
+
+      .btn-primary {
+        background: var(--primary-500);
+        color: var(--text-on-primary);
+        border-color: var(--primary-500);
+
+        &:hover:not(:disabled) {
+          background: var(--primary-600);
+          border-color: var(--primary-600);
+        }
+      }
+    }
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    background: var(--surface-0);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+
+    .chart-canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .chart-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--primary-500);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: var(--spacing-md);
+      }
+
+      .loading-text {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-secondary);
+        margin: 0;
+      }
+    }
+
+    .chart-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: var(--spacing-xl);
+
+      .error-icon {
+        font-size: 48px;
+        margin-bottom: var(--spacing-md);
+        opacity: 0.7;
+      }
+
+      .error-message {
+        color: var(--error-500);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        margin-bottom: var(--spacing-lg);
+      }
+
+      .btn {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        background: var(--primary-500);
+        color: var(--text-on-primary);
+        border: none;
+        border-radius: var(--border-radius-md);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background: var(--primary-600);
+        }
+      }
+    }
+  }
+
+  .chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        flex-shrink: 0;
+
+        &.expenses {
+          background: rgb(239, 68, 68);
+        }
+
+        &.income {
+          background: rgb(34, 197, 94);
+        }
+
+        &.net {
+          background: rgb(59, 130, 246);
+        }
+      }
+
+      .legend-label {
+        font-weight: var(--font-weight-medium);
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: var(--spacing-md);
+
+    .chart-header {
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      align-items: stretch;
+
+      .chart-controls {
+        justify-content: center;
+      }
+    }
+
+    .chart-legend {
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      align-items: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .chart-container {
+      min-height: 250px;
+    }
+
+    .chart-legend {
+      .legend-item {
+        font-size: var(--font-size-xs);
+      }
+    }
+  }
+}
+
+// Keyframe animations
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

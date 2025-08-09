@@ -89,20 +89,6 @@ export class AccountComponent implements OnInit, OnDestroy {
       }, 1000);
       
       // TODO: Implement actual API call when backend endpoint is available
-      // this.userService.updateUser(this.currentUser.id, updatedData).subscribe({
-      //   next: (updatedUser) => {
-      //     this.isLoading = false;
-      //     this.isEditing = false;
-      //     this.successMessage = 'Account information updated successfully!';
-      //     // Update the current user in the auth service
-      //     this.authService.updateCurrentUser(updatedUser);
-      //   },
-      //   error: (error) => {
-      //     this.isLoading = false;
-      //     this.errorMessage = 'Failed to update account information. Please try again.';
-      //     console.error('Update user error:', error);
-      //   }
-      // });
     }
   }
   

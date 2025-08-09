@@ -30,12 +30,6 @@ namespace Expense.Tracker.Services.Repositories
             entity.CreatedAt = DateTime.UtcNow;
             entity.UpdatedAt = DateTime.UtcNow;
             
-            // Set to existing sample user ID if not provided (must reference existing user)
-            if (string.IsNullOrEmpty(entity.UserId))
-            {
-                entity.UserId = "550e8400-e29b-41d4-a716-446655440000"; // Sample user ID from database
-            }
-            
             _context.Categories.Add(entity);
             await _context.SaveChangesAsync();
             return entity;
@@ -91,14 +85,18 @@ namespace Expense.Tracker.Services.Repositories
         public async Task<IEnumerable<Category>> GetByUserIdAsync(Guid userId)
         {
             return await _context.Categories
-                .Where(c => c.UserId == userId.ToString())
+                .Where(c => c.UserId == null || c.UserId == userId.ToString())
+                .OrderBy(c => c.IsDefault ? 0 : 1)
+                .ThenBy(c => c.Name)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Category>> GetByUserIdAndTypeAsync(Guid userId, CategoryType type)
         {
             return await _context.Categories
-                .Where(c => c.UserId == userId.ToString() && c.Type == type)
+                .Where(c => (c.UserId == null || c.UserId == userId.ToString()) && c.Type == type)
+                .OrderBy(c => c.IsDefault ? 0 : 1)
+                .ThenBy(c => c.Name)
                 .ToListAsync();
         }
 
@@ -111,7 +109,7 @@ namespace Expense.Tracker.Services.Repositories
         public async Task<Category?> GetByUserIdAndIdAsync(Guid userId, string id)
         {
             return await _context.Categories
-                .FirstOrDefaultAsync(c => c.UserId == userId.ToString() && c.Id == id);
+                .FirstOrDefaultAsync(c => (c.UserId == null || c.UserId == userId.ToString()) && c.Id == id);
         }
     }
 

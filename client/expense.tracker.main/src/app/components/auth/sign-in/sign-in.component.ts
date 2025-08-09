@@ -40,7 +40,7 @@ export class SignInComponent {
       
       this.authService.login(loginRequest).subscribe({
         next: (result) => {
-          if (result.success && result.token) {
+          if (result.success && result.user) {
             this.router.navigate(['/dashboard']);
           } else {
             this.errorMessage.set(result.errorMessage || 'Login failed');
@@ -48,8 +48,13 @@ export class SignInComponent {
           this.isLoading.set(false);
         },
         error: (error: any) => {
-          console.error('Login error:', error);
-          this.errorMessage.set('An unexpected error occurred. Please try again.');
+          let errorMsg = 'An unexpected error occurred. Please try again.';
+          if (error.error && error.error.message) {
+            errorMsg = error.error.message;
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          this.errorMessage.set(errorMsg);
           this.isLoading.set(false);
         }
       });

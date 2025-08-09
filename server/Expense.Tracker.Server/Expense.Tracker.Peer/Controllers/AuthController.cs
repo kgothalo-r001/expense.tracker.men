@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Constants;
+using Microsoft.Extensions.Logging;
+using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Peer.Controllers;
 
@@ -11,10 +14,12 @@ namespace Expense.Tracker.Peer.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthenticationService _authService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthenticationService authService)
+    public AuthController(IAuthenticationService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _logger = logger;
     }
 
     [HttpPost("Login")]
@@ -32,7 +37,15 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = result.ErrorMessage });
         }
 
-        return Ok(result);
+        SetAuthCookie(result.Token);
+
+        return Ok(new AuthenticationResult
+        {
+            Success = true,
+            User = result.User,
+            Token = null,
+            ErrorMessage = null
+        });
     }
 
     [HttpPost("Register")]
@@ -47,30 +60,43 @@ public class AuthController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(new { 
-                message = result.ErrorMessage,
-                errors = result.ValidationErrors
+            return BadRequest(new AuthenticationResult
+            {
+                Success = false,
+                ErrorMessage = result.ErrorMessage,
+                ValidationErrors = result.ValidationErrors
             });
         }
 
-        return Ok(result);
+        SetAuthCookie(result.Token);
+
+        return Ok(new AuthenticationResult
+        {
+            Success = true,
+            User = result.User,
+            Token = null,
+            ErrorMessage = null
+        });
     }
 
     [HttpPost("Logout")]
     [Authorize]
     public async Task<ActionResult> Logout()
     {
-        var token = GetTokenFromHeader();
+        var token = GetTokenFromCookie();
         if (string.IsNullOrEmpty(token))
         {
-            return BadRequest(new { message = "Token is required" });
+            return BadRequest(new { message = "No authentication token found" });
         }
 
         var success = await _authService.LogoutAsync(token);
         
+        // Clear the authentication cookie regardless of logout service result
+        ClearAuthCookie();
+        
         if (!success)
         {
-            return BadRequest(new { message = "Failed to logout" });
+            return BadRequest(new { message = "Failed to logout from server, but cookie cleared" });
         }
 
         return Ok(new { message = "Logout successful" });
@@ -80,17 +106,41 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<UserDto>> GetCurrentUser()
     {
-        var token = GetTokenFromHeader();
+        var token = GetTokenFromCookie();
         if (string.IsNullOrEmpty(token))
         {
-            return Unauthorized();
+            return StatusCode(401, new { message = "No authentication token found" });
         }
 
         var user = await _authService.GetUserByTokenAsync(token);
         
         if (user == null)
         {
-            return Unauthorized();
+            // Clear invalid cookie
+            ClearAuthCookie();
+            return StatusCode(401, new { message = "Invalid or expired token" });
+        }
+
+        return Ok(user);
+    }
+
+    [HttpGet("CheckSession")]
+    public async Task<ActionResult<UserDto>> CheckSession()
+    {
+        var token = GetTokenFromCookie();
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return Ok(null as UserDto);
+        }
+
+        var user = await _authService.GetUserByTokenAsync(token);
+        
+        if (user == null)
+        {
+            // Clear invalid cookie
+            ClearAuthCookie();
+            return Ok(null as UserDto);
         }
 
         return Ok(user);
@@ -170,6 +220,13 @@ public class AuthController : ControllerBase
         return Ok(new { available = isAvailable });
     }
 
+    private const string AuthCookieName = "ExpenseTracker.Auth";
+    
+    private string? GetTokenFromCookie()
+    {
+        return HttpContext.Request.Cookies[AuthCookieName];
+    }
+    
     private string? GetTokenFromHeader()
     {
         var authHeader = HttpContext.Request.Headers["Authorization"].FirstOrDefault();
@@ -180,5 +237,16 @@ public class AuthController : ControllerBase
         }
 
         return null;
+    }
+    
+    private void SetAuthCookie(string token)
+    {
+        var options = CookieHelper.GetSecureCookieOptions();
+        HttpContext.Response.Cookies.Append(AuthCookieName, token, options);
+    }
+    
+    private void ClearAuthCookie()
+    {
+        HttpContext.Response.Cookies.Delete(AuthCookieName, CookieHelper.GetExpiredCookieOptions());
     }
 }

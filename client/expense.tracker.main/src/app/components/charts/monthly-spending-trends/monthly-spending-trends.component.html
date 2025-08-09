@@ -1,0 +1,54 @@
+<div class="monthly-spending-trends-chart">
+  <div class="chart-header">
+    <h3 class="chart-title">Monthly Spending Trends</h3>
+    <div class="chart-controls">
+      <button 
+        class="btn btn-secondary btn-sm"
+        (click)="refreshChart()"
+        [disabled]="isLoading"
+        title="Refresh chart data">
+        <span class="icon" [class.spinning]="isLoading">🔄</span>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="chart-container" [style.height]="height">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="chart-loading">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading spending trends...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="hasError && !isLoading" class="chart-error">
+      <div class="error-icon">⚠️</div>
+      <p class="error-message">{{ errorMessage }}</p>
+      <button class="btn btn-primary btn-sm" (click)="refreshChart()">
+        Try Again
+      </button>
+    </div>
+
+    <!-- Chart Canvas -->
+    <canvas 
+      #chartCanvas
+      *ngIf="!isLoading && !hasError"
+      class="chart-canvas">
+    </canvas>
+  </div>
+
+  <div class="chart-legend" *ngIf="!isLoading && !hasError">
+    <div class="legend-item">
+      <span class="legend-color expenses"></span>
+      <span class="legend-label">Total Expenses</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-color income"></span>
+      <span class="legend-label">Total Income</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-color net"></span>
+      <span class="legend-label">Net Amount</span>
+    </div>
+  </div>
+</div>

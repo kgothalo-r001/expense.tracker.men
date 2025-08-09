@@ -3,21 +3,21 @@ using Expense.Tracker.Services.Implementation;
 using Expense.Tracker.Services.Implementation.Factories;
 using Expense.Tracker.Services.Repositories;
 using Expense.Tracker.Services.Helpers;
-using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Abstractions.Enums;
+using Expense.Tracker.Services.Validators;
+using Expense.Tracker.Services.Factories;
 using Expense.Tracker.Services.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace Expense.Tracker.Application.Extensions
 {
+    /// <summary>
+    /// Extension methods for registering application services and dependencies
+    /// </summary>
     public static class ServiceCollectionExtensions
     {
+
+        #region Public Extension Methods
+        
         /// <summary>
         /// Add all expense tracker services and repositories to the dependency injection container
         /// </summary>
@@ -26,207 +26,99 @@ namespace Expense.Tracker.Application.Extensions
         /// <returns>The service collection for chaining</returns>
         public static IServiceCollection AddExpenseTrackerServices(this IServiceCollection services, string connectionString)
         {
-            // Configure DbContext with PostgreSQL (using value converters for enums)
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new ArgumentException("Connection string cannot be null or empty", nameof(connectionString));
+
+            // Configure Entity Framework DbContext
+            ConfigureDatabase(services, connectionString);
+            
+            // Register all service dependencies
+            RegisterRepositories(services);
+            RegisterBusinessServices(services);
+            RegisterAuthenticationServices(services);
+            RegisterUtilityServices(services);
+            RegisterFactoryServices(services);
+            RegisterValidationServices(services);
+
+            return services;
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// Configure Entity Framework DbContext with PostgreSQL
+        /// </summary>
+        private static void ConfigureDatabase(IServiceCollection services, string connectionString)
+        {
             services.AddDbContext<ExpenseTrackerDbContext>(options =>
-                options.UseNpgsql(connectionString)
-            );
-
-            // Register HTTP context accessor for current user service
+                options.UseNpgsql(connectionString));
+            
             services.AddHttpContextAccessor();
+        }
 
-            // Register repositories as scoped (Entity Framework)
+        /// <summary>
+        /// Register all repository services
+        /// </summary>
+        private static void RegisterRepositories(IServiceCollection services)
+        {
             services.AddScoped<ICategoryRepository, EfCategoryRepository>();
             services.AddScoped<ITransactionRepository, EfTransactionRepository>();
             services.AddScoped<ITagRepository, EfTagRepository>();
             services.AddScoped<IUserRepository, EfUserRepository>();
             services.AddScoped<IUserSessionRepository, EfUserSessionRepository>();
+        }
 
-            // Register utility services
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-            // Register helper services
-            services.AddScoped<IAuthenticatedUserHelper, AuthenticatedUserHelper>();
-
-            // Register business services as scoped
+        /// <summary>
+        /// Register all business logic services
+        /// </summary>
+        private static void RegisterBusinessServices(IServiceCollection services)
+        {
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<ITagService, TagService>();
             services.AddScoped<IAnalyticsService, AnalyticsService>();
+        }
 
-            // Register strategy factory
-            services.AddScoped<ICalculationStrategyFactory, CalculationStrategyFactory>();
-
-            // Register authentication services
+        /// <summary>
+        /// Register all authentication-related services
+        /// </summary>
+        private static void RegisterAuthenticationServices(IServiceCollection services)
+        {
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ISessionService, SessionService>();
             services.AddScoped<IUserValidationService, UserValidationService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
-
-            return services;
         }
 
         /// <summary>
-        /// Add and configure controllers from the Peer assembly
+        /// Register utility and helper services
         /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <returns>The service collection for chaining</returns>
-        public static IServiceCollection AddExpenseTrackerControllers(this IServiceCollection services)
+        private static void RegisterUtilityServices(IServiceCollection services)
         {
-            services
-                .AddControllers()
-                .AddApplicationPart(typeof(Expense.Tracker.Peer.Controllers.CategoriesController).Assembly)
-                .AddControllersAsServices()
-                .AddJsonOptions(options =>
-                {
-                    // Configure JSON serialization to use enum names instead of integers
-                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                });
-
-            return services;
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IAuthenticatedUserHelper, AuthenticatedUserHelper>();
         }
 
         /// <summary>
-        /// Add and configure Swagger/OpenAPI documentation
+        /// Register factory services and strategies
         /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <returns>The service collection for chaining</returns>
-        public static IServiceCollection AddExpenseTrackerSwagger(this IServiceCollection services)
+        private static void RegisterFactoryServices(IServiceCollection services)
         {
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo()
-                {
-                    Title = "Expense Tracker API",
-                    Version = "1.0.0",
-                    Description = "API Documentation for Expense Tracker",
-                    Contact = new Microsoft.OpenApi.Models.OpenApiContact
-                    {
-                        Name = "Expense Tracker Team",
-                        Email = "kgothalo.ramabele@lexisnexis.co.za"
-                    }
-                });
-
-                // Enable XML comments for better API documentation
-                var xmlFile = $"ExpenseTracker.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                if (File.Exists(xmlPath))
-                {
-                    c.IncludeXmlComments(xmlPath);
-                }
-
-                // Configure JWT authentication in Swagger
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                    Name = "Authorization",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer"
-                });
-
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            },
-                            Scheme = "oauth2",
-                            Name = "Bearer",
-                            In = ParameterLocation.Header,
-                        },
-                        new List<string>()
-                    }
-                });
-
-                // Configure enum handling to preserve names as strings
-                c.SchemaFilter<EnumSchemaFilter>();
-                c.UseAllOfToExtendReferenceSchemas();
-            });
-
-            return services;
+            services.AddScoped<ICalculationStrategyFactory, CalculationStrategyFactory>();
+            services.AddScoped<ITransactionFactory, TransactionFactory>();
         }
 
         /// <summary>
-        /// Add and configure CORS policy
+        /// Register validation services
         /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <returns>The service collection for chaining</returns>
-        public static IServiceCollection AddExpenseTrackerCors(this IServiceCollection services)
+        private static void RegisterValidationServices(IServiceCollection services)
         {
-            services.AddCors(options =>
-            {
-                options.AddPolicy("ExpenseTrackerCorsPolicy", builder =>
-                {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader();
-                });
-
-                // More restrictive policy for production
-                options.AddPolicy("ExpenseTrackerCorsProduction", builder =>
-                {
-                    builder.WithOrigins("http://localhost:4200", "https://localhost:4200")
-                           .AllowAnyMethod()
-                           .AllowAnyHeader()
-                           .AllowCredentials();
-                });
-            });
-
-            return services;
+            services.AddScoped<ITransactionValidationService, TransactionValidator>();
         }
 
-        /// <summary>
-        /// Add and configure JWT authentication
-        /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <param name="configuration">The configuration</param>
-        /// <returns>The service collection for chaining</returns>
-        public static IServiceCollection AddExpenseTrackerAuthentication(this IServiceCollection services, IConfiguration configuration)
-        {
-            var jwtSecret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT Secret not configured");
-            var key = Encoding.ASCII.GetBytes(jwtSecret);
-
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.RequireHttpsMetadata = false;
-                options.SaveToken = true;
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-            });
-
-            return services;
-        }
-
-        /// <summary>
-        /// Initialize default data (categories, etc.)
-        /// </summary>
-        /// <param name="serviceProvider">The service provider</param>
-        /// <returns>Task representing the async operation</returns>
-        public static async Task InitializeExpenseTrackerDataAsync(this IServiceProvider serviceProvider)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryService>();
-            
-            // Initialize default categories on startup
-            await categoryService.InitializeDefaultCategoriesAsync();
-        }
+        #endregion
     }
 }

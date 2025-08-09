@@ -1,5 +1,6 @@
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
+using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Constants;
 using Expense.Tracker.Services.Exceptions;
 

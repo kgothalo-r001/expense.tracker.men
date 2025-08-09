@@ -5,404 +5,204 @@
       <button type="button" class="btn-close" (click)="onCancel()">&times;</button>
     </div>
 
-    <form [formGroup]="transactionForm" (ngSubmit)="onSubmit()" class="transaction-form">
-      <!-- Error Message -->
-      <div class="error-message" *ngIf="errorMessage">
-        <div class="alert alert-error">
-          <span class="error-icon">⚠️</span>
-          {{ errorMessage }}
-        </div>
-      </div>
-
-      <!-- Basic Information -->
-      <div class="form-section">
-        <h3>Basic Information</h3>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="description">Description *</label>
-            <input
-              id="description"
-              type="text"
-              formControlName="description"
-              class="form-input"
-              [class.error]="description?.invalid && description?.touched"
-              placeholder="Enter transaction description"
-            >
-            <div class="form-error" *ngIf="description?.invalid && description?.touched">
-              <span *ngIf="description?.errors?.['required']">Description is required</span>
-              <span *ngIf="description?.errors?.['minlength']">Description must be at least 2 characters</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="amount">Amount *</label>
-            <input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              formControlName="amount"
-              class="form-input"
-              [class.error]="amount?.invalid && amount?.touched"
-              placeholder="0.00"
-            >
-            <div class="form-error" *ngIf="amount?.invalid && amount?.touched">
-              <span *ngIf="amount?.errors?.['required']">Amount is required</span>
-              <span *ngIf="amount?.errors?.['min']">Amount must be greater than 0</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="type">Type *</label>
-            <select
-              id="type"
-              formControlName="type"
-              class="form-select"
-              [class.error]="type?.invalid && type?.touched"
-            >
-              <option *ngFor="let transactionType of transactionTypes" [value]="transactionType">
-                {{ transactionType }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="categoryId">Category *</label>
-            <select
-              id="categoryId"
-              formControlName="categoryId"
-              class="form-select"
-              [class.error]="categoryId?.invalid && categoryId?.touched"
-            >
-              <option value="">Select a category</option>
-              <option *ngFor="let category of categories$ | async" [value]="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-            <div class="form-error" *ngIf="categoryId?.invalid && categoryId?.touched">
-              <span *ngIf="categoryId?.errors?.['required']">Category is required</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="date">Date *</label>
-            <input
-              id="date"
-              type="date"
-              formControlName="date"
-              class="form-input"
-              [class.error]="date?.invalid && date?.touched"
-            >
-            <div class="form-error" *ngIf="date?.invalid && date?.touched">
-              <span *ngIf="date?.errors?.['required']">Date is required</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="tags">Tags</label>
-            <input
-              id="tags"
-              type="text"
-              formControlName="tags"
-              class="form-input"
-              placeholder="work, family, business (comma separated)"
-            >
-            <small class="form-help">Separate multiple tags with commas</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Additional Information -->
-      <div class="form-section">
-        <h3>Additional Information</h3>
-        
-        <div class="form-group">
-          <label for="notes">Notes</label>
-          <textarea
-            id="notes"
-            formControlName="notes"
-            class="form-textarea"
-            rows="3"
-            placeholder="Add any additional notes..."
-          ></textarea>
-        </div>
-      </div>
-
-      <!-- Recurring Transaction -->
-      <div class="form-section">
-        <div class="form-group checkbox-group">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              formControlName="isRecurring"
-              class="form-checkbox"
-            >
-            <span class="checkmark"></span>
-            This is a recurring transaction
-          </label>
-        </div>
-
-        <div class="recurring-options" *ngIf="isRecurring?.value">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="recurringFrequency">Frequency *</label>
-              <select
-                id="recurringFrequency"
-                formControlName="recurringFrequency"
-                class="form-select"
-                [class.error]="recurringFrequency?.invalid && recurringFrequency?.touched"
-              >
-                <option *ngFor="let frequency of recurringFrequencies" [value]="frequency">
-                  {{ frequency }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="recurringEndDate">End Date</label>
-              <input
-                id="recurringEndDate"
-                type="date"
-                formControlName="recurringEndDate"
-                class="form-input"
-                [class.error]="recurringEndDate?.invalid && recurringEndDate?.touched"
-              >
-              <small class="form-help">Leave empty for indefinite recurring</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Form Actions -->
-      <div class="form-actions">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="onCancel()"
-          [disabled]="isSubmitting"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          class="btn btn-primary"
-          [disabled]="transactionForm.invalid || isSubmitting"
-        >
-          <span *ngIf="isSubmitting" class="loading-spinner small"></span>
-          {{ isSubmitting ? 'Saving...' : (transaction ? 'Update' : 'Save') }} Transaction
-        </button>
-      </div>
-    </form>
+    <ng-container *ngTemplateOutlet="formTemplate"></ng-container>
   </div>
 </div>
 
-<!-- Embedded Form (when used inside another modal) -->
-<form [formGroup]="transactionForm" (ngSubmit)="onSubmit()" class="transaction-form" *ngIf="!showModalWrapper">
-  <!-- Error Message -->
-  <div class="error-message" *ngIf="errorMessage">
-    <div class="alert alert-error">
-      <span class="error-icon">⚠️</span>
-      {{ errorMessage }}
-    </div>
-  </div>
+<ng-container *ngIf="!showModalWrapper" [ngTemplateOutlet]="formTemplate"></ng-container>
 
-  <!-- Basic Information -->
-  <div class="form-section">
-    <h3>Basic Information</h3>
-    
-    <div class="form-row">
-      <div class="form-group">
-        <label for="description">Description *</label>
-        <input
-          id="description"
-          type="text"
-          formControlName="description"
-          class="form-input"
-          [class.error]="description?.invalid && description?.touched"
-          placeholder="Enter transaction description"
-        >
-        <div class="form-error" *ngIf="description?.invalid && description?.touched">
-          <span *ngIf="description?.errors?.['required']">Description is required</span>
-          <span *ngIf="description?.errors?.['minlength']">Description must be at least 2 characters</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="amount">Amount *</label>
-        <input
-          id="amount"
-          type="number"
-          step="0.01"
-          min="0"
-          formControlName="amount"
-          class="form-input"
-          [class.error]="amount?.invalid && amount?.touched"
-          placeholder="0.00"
-        >
-        <div class="form-error" *ngIf="amount?.invalid && amount?.touched">
-          <span *ngIf="amount?.errors?.['required']">Amount is required</span>
-          <span *ngIf="amount?.errors?.['min']">Amount must be greater than 0</span>
-        </div>
+<ng-template #formTemplate>
+  <form [formGroup]="transactionForm" (ngSubmit)="onSubmit()" class="transaction-form">
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="errorMessage">
+      <div class="alert alert-error">
+        <span class="error-icon">⚠️</span>
+        {{ errorMessage }}
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="type">Type *</label>
-        <select
-          id="type"
-          formControlName="type"
-          class="form-select"
-          [class.error]="type?.invalid && type?.touched"
-        >
-          <option *ngFor="let transactionType of transactionTypes" [value]="transactionType">
-            {{ transactionType }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="categoryId">Category *</label>
-        <select
-          id="categoryId"
-          formControlName="categoryId"
-          class="form-select"
-          [class.error]="categoryId?.invalid && categoryId?.touched"
-        >
-          <option value="">Select a category</option>
-          <option *ngFor="let category of categories$ | async" [value]="category.id">
-            {{ category.name }}
-          </option>
-        </select>
-        <div class="form-error" *ngIf="categoryId?.invalid && categoryId?.touched">
-          <span *ngIf="categoryId?.errors?.['required']">Category is required</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label for="date">Date *</label>
-        <input
-          id="date"
-          type="date"
-          formControlName="date"
-          class="form-input"
-          [class.error]="date?.invalid && date?.touched"
-        >
-        <div class="form-error" *ngIf="date?.invalid && date?.touched">
-          <span *ngIf="date?.errors?.['required']">Date is required</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="tags">Tags</label>
-        <input
-          id="tags"
-          type="text"
-          formControlName="tags"
-          class="form-input"
-          placeholder="work, family, business (comma separated)"
-        >
-        <small class="form-help">Separate multiple tags with commas</small>
-      </div>
-    </div>
-  </div>
-
-  <!-- Additional Information -->
-  <div class="form-section">
-    <h3>Additional Information</h3>
-    
-    <div class="form-group">
-      <label for="notes">Notes</label>
-      <textarea
-        id="notes"
-        formControlName="notes"
-        class="form-textarea"
-        rows="3"
-        placeholder="Add any additional notes..."
-      ></textarea>
-    </div>
-  </div>
-
-  <!-- Recurring Transaction -->
-  <div class="form-section">
-    <div class="form-group checkbox-group">
-      <label class="checkbox-label">
-        <input
-          type="checkbox"
-          formControlName="isRecurring"
-          class="form-checkbox"
-        >
-        <span class="checkmark"></span>
-        This is a recurring transaction
-      </label>
-    </div>
-
-    <div class="recurring-options" *ngIf="isRecurring?.value">
+    <!-- Basic Information -->
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      
       <div class="form-row">
         <div class="form-group">
-          <label for="recurringFrequency">Frequency *</label>
-          <select
-            id="recurringFrequency"
-            formControlName="recurringFrequency"
-            class="form-select"
-            [class.error]="recurringFrequency?.invalid && recurringFrequency?.touched"
+          <label for="description">Description *</label>
+          <input
+            id="description"
+            type="text"
+            formControlName="description"
+            class="form-input"
+            [class.error]="description?.invalid && description?.touched"
+            placeholder="Enter transaction description"
           >
-            <option *ngFor="let frequency of recurringFrequencies" [value]="frequency">
-              {{ frequency }}
+          <div class="form-error" *ngIf="description?.invalid && description?.touched">
+            <span *ngIf="description?.errors?.['required']">Description is required</span>
+            <span *ngIf="description?.errors?.['minlength']">Description must be at least 2 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount *</label>
+          <input
+            id="amount"
+            type="number"
+            step="0.01"
+            min="0"
+            formControlName="amount"
+            class="form-input"
+            [class.error]="amount?.invalid && amount?.touched"
+            placeholder="0.00"
+          >
+          <div class="form-error" *ngIf="amount?.invalid && amount?.touched">
+            <span *ngIf="amount?.errors?.['required']">Amount is required</span>
+            <span *ngIf="amount?.errors?.['min']">Amount must be greater than 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="type">Type *</label>
+          <select
+            id="type"
+            formControlName="type"
+            class="form-select"
+            [class.error]="type?.invalid && type?.touched"
+          >
+            <option *ngFor="let transactionType of transactionTypes" [value]="transactionType">
+              {{ transactionType }}
             </option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="recurringEndDate">End Date</label>
-          <input
-            id="recurringEndDate"
-            type="date"
-            formControlName="recurringEndDate"
-            class="form-input"
-            [class.error]="recurringEndDate?.invalid && recurringEndDate?.touched"
+          <label for="categoryId">Category *</label>
+          <select
+            id="categoryId"
+            formControlName="categoryId"
+            class="form-select"
+            [class.error]="categoryId?.invalid && categoryId?.touched"
           >
-          <small class="form-help">Leave empty for indefinite recurring</small>
+            <option value="">Select a category</option>
+            <option *ngFor="let category of categories$ | async" [value]="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+          <div class="form-error" *ngIf="categoryId?.invalid && categoryId?.touched">
+            <span *ngIf="categoryId?.errors?.['required']">Category is required</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="date">Date *</label>
+          <input
+            id="date"
+            type="date"
+            formControlName="date"
+            class="form-input"
+            [class.error]="date?.invalid && date?.touched"
+          >
+          <div class="form-error" *ngIf="date?.invalid && date?.touched">
+            <span *ngIf="date?.errors?.['required']">Date is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tags">Tags</label>
+          <input
+            id="tags"
+            type="text"
+            formControlName="tags"
+            class="form-input"
+            placeholder="work, family, business (comma separated)"
+          >
+          <small class="form-help">Separate multiple tags with commas</small>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Form Actions -->
-  <div class="form-actions">
-    <!-- Debug info (remove in production) -->
-    <div *ngIf="transactionForm.invalid" style="margin-bottom: 1rem; padding: 0.5rem; background: #fee; border: 1px solid #fcc; font-size: 0.8rem;">
-      <strong>Form Invalid - Debug Info:</strong><br>
-      Valid: {{ transactionForm.valid }}<br>
-      Description: {{ description?.valid }} ({{ description?.value }})<br>
-      Amount: {{ amount?.valid }} ({{ amount?.value }})<br>
-      Type: {{ type?.valid }} ({{ type?.value }})<br>
-      CategoryId: {{ categoryId?.valid }} ({{ categoryId?.value }})<br>
-      Date: {{ date?.valid }} ({{ date?.value }})<br>
+    <!-- Additional Information -->
+    <div class="form-section">
+      <h3>Additional Information</h3>
+      
+      <div class="form-group">
+        <label for="notes">Notes</label>
+        <textarea
+          id="notes"
+          formControlName="notes"
+          class="form-textarea"
+          rows="3"
+          placeholder="Add any additional notes..."
+        ></textarea>
+      </div>
     </div>
-    
-    <button
-      type="button"
-      class="btn btn-secondary"
-      (click)="onCancel()"
-      [disabled]="isSubmitting"
-    >
-      Cancel
-    </button>
-    <button
-      type="submit"
-      class="btn btn-primary"
-      [disabled]="transactionForm.invalid || isSubmitting"
-    >
-      <span *ngIf="isSubmitting" class="loading-spinner small"></span>
-      {{ isSubmitting ? 'Saving...' : (transaction ? 'Update' : 'Save') }} Transaction
-    </button>
-  </div>
-</form>
+
+    <!-- Recurring Transaction -->
+    <div class="form-section">
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="isRecurring"
+            class="form-checkbox"
+          >
+          <span class="checkmark"></span>
+          This is a recurring transaction
+        </label>
+      </div>
+
+      <div class="recurring-options" *ngIf="isRecurring?.value">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="recurringFrequency">Frequency *</label>
+            <select
+              id="recurringFrequency"
+              formControlName="recurringFrequency"
+              class="form-select"
+              [class.error]="recurringFrequency?.invalid && recurringFrequency?.touched"
+            >
+              <option *ngFor="let frequency of recurringFrequencies" [value]="frequency">
+                {{ frequency }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="recurringEndDate">End Date</label>
+            <input
+              id="recurringEndDate"
+              type="date"
+              formControlName="recurringEndDate"
+              class="form-input"
+              [class.error]="recurringEndDate?.invalid && recurringEndDate?.touched"
+            >
+            <small class="form-help">Leave empty for indefinite recurring</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="onCancel()"
+        [disabled]="isSubmitting"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="transactionForm.invalid || isSubmitting"
+      >
+        <span *ngIf="isSubmitting" class="loading-spinner small"></span>
+        {{ isSubmitting ? 'Saving...' : (transaction ? 'Update' : 'Save') }} Transaction
+      </button>
+    </div>
+  </form>
+</ng-template>

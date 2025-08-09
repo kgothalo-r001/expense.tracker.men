@@ -26,7 +26,6 @@ export class DeleteConfirmationModalComponent {
 
   onConfirm(): void {
     if (!this.transactionId) {
-      console.error('No transaction ID provided for deletion');
       return;
     }
 

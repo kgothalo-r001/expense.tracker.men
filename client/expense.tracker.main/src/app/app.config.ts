@@ -34,9 +34,9 @@ export const appConfig: ApplicationConfig = {
       provide: API_CLIENT, 
       useClass: Client 
     },
-    { 
+    {
       provide: API_BASE_URL, 
-      useValue: 'https://localhost:49871' 
+      useValue: 'https://localhost:49871'
     },
     {
       provide: HTTP_INTERCEPTORS,

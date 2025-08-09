@@ -95,7 +95,7 @@ export class RegisterComponent {
       
       this.authService.register(request).subscribe({
         next: (result) => {
-          if (result.success) {
+          if (result.success && result.user) {
             this.router.navigate(['/dashboard']);
           } else {
             this.errorMessage.set(result.errorMessage || 'Registration failed');
@@ -103,8 +103,14 @@ export class RegisterComponent {
           }
           this.isLoading.set(false);
         },
-        error: () => {
-          this.errorMessage.set('An unexpected error occurred. Please try again.');
+        error: (error: any) => {
+          let errorMsg = 'An unexpected error occurred. Please try again.';
+          if (error.error && error.error.message) {
+            errorMsg = error.error.message;
+          } else if (error.message) {
+            errorMsg = error.message;
+          }
+          this.errorMessage.set(errorMsg);
           this.isLoading.set(false);
         }
       });
