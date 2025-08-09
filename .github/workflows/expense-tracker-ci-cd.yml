@@ -92,23 +92,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
       
-    - name: 📦 Install & Build Abstractions
-      working-directory: client/abstractions
-      run: |
-        npm install --legacy-peer-deps
-        npm run build
-      
-    - name: 📦 Install & Build Business Layer
-      working-directory: client/business
-      run: |
-        npm install --legacy-peer-deps
-        npm run build
-      
     - name: 📦 Install & Build Main Application
       working-directory: ${{ env.CLIENT_PATH }}
       run: |
         npm install --legacy-peer-deps
-        npx nswag run nswag.json /runtime:Net80 && node override.js
+        npm run genClient
         npm run build -- --configuration=production
         
     - name: 🚀 Upload Frontend Artifact
