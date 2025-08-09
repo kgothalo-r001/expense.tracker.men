@@ -18,7 +18,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   
   # Node.js Configuration  
-  NODE_VERSION: '20.x'
+  NODE_VERSION: '22.x'
   
   # Solution and Project Paths
   SOLUTION_PATH: 'server/Expense.Tracker.Server/Expense.Tracker.Server.sln'
@@ -81,8 +81,16 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: '${{ env.CLIENT_PATH }}/package-lock.json'
+        
+    - name: 📦 Cache Node Modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          client/*/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('client/**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
         
     - name: 📦 Install Dependencies
       working-directory: ${{ env.CLIENT_PATH }}
