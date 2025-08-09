@@ -92,29 +92,23 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
         
-    - name: 📦 Install Dependencies
-      working-directory: ${{ env.CLIENT_PATH }}
-      run: npm install
-      
-    - name: 📦 Install Abstraction Dependencies
+    - name: 📦 Install & Build Abstractions
       working-directory: client/abstractions
-      run: npm install
+      run: |
+        npm install --legacy-peer-deps
+        npm run build
       
-    - name: 📦 Install Business Dependencies  
+    - name: 📦 Install & Build Business Layer
       working-directory: client/business
-      run: npm install
+      run: |
+        npm install --legacy-peer-deps
+        npm run build
       
-    - name: 🏗️ Build Abstractions
-      working-directory: client/abstractions
-      run: npm run build
-      
-    - name: 🏗️ Build Business Layer
-      working-directory: client/business
-      run: npm run build
-      
-    - name: 🏗️ Build Frontend (Production)
+    - name: 📦 Install & Build Main Application
       working-directory: ${{ env.CLIENT_PATH }}
-      run: npm run build -- --configuration=production
+      run: |
+        npm install --legacy-peer-deps
+        npm run build -- --configuration=production
         
     - name: 🚀 Upload Frontend Artifact
       if: success()
