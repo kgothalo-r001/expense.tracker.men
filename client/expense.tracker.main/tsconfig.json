@@ -2,18 +2,12 @@
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
-  "include": [
-    "src/**/*.ts",
-    "src/main.ts"
-  ],
   "exclude": [
     "node_modules",
-    "dist",
     "**/*.spec.ts"
   ],
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
-    "noEmit": true,
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -23,11 +17,10 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "es2022",
-    "module": "es2022",
+    "module": "esnext",
     "baseUrl": ".",
     "paths": {
     }
@@ -37,5 +30,8 @@
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": false
-  }
+  },
+  "include": [
+    "**/*.ts"
+  ]
 }
