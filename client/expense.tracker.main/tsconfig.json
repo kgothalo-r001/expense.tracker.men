@@ -3,7 +3,8 @@
 {
   "compileOnSave": false,
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/main.ts"
   ],
   "exclude": [
     "node_modules",

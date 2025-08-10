@@ -10,6 +10,7 @@ import { UserDto } from '../../auto/autoexpensetrackerclient';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, ThemeToggleComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.less'
