@@ -20,8 +20,6 @@
     "module": "ESNext",
     "baseUrl": ".",
     "paths": {
-      "@expense-tracker/abstractions": ["../abstractions"],
-      "@expense-tracker/abstractions/*": ["../abstractions/*"]
     },
     "noEmit": true
   },

@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import { Category } from '../../auto/autobusinessclient';
-import { CategoryState } from '@expense-tracker/abstractions';
+import { CategoryState } from '../../../abstractions'
 import * as CategoryActions from './category.actions';
 
 // Specialize the generic CategoryState with our Category type

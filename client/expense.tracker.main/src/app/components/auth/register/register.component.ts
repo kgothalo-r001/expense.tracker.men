@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Observable, tap, catchError, of, debounceTime, switchMap } from 'rxjs';
-import { AuthService } from '@expense-tracker/business';
+import { AuthService } from '../../../../../../business';
 import { RegisterRequest, IClient } from '../../../../../auto/autoexpensetrackerclient';
 import { API_CLIENT } from '../../../app.config';
 

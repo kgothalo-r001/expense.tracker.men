@@ -1,3 +1,3 @@
-import type { AppState } from "@expense-tracker/abstractions";
+import type { AppState } from "../../abstractions";
 
 export { AppState };

@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import { Transaction } from '../../auto/autobusinessclient';
-import { TransactionState } from '@expense-tracker/abstractions';
+import { TransactionState } from '../../../abstractions';
 import * as TransactionActions from './transaction.actions';
 
 // Specialize the generic TransactionState with our Transaction type

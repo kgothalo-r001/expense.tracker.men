@@ -1,5 +1,5 @@
 {
-  "runtime": "Net90",
+  "runtime": "Net80",
   "documentGenerator": {
     "fromDocument": {
       "url": "../expense.tracker.main/swagger.json"
