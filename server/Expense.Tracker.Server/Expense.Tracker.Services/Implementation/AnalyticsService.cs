@@ -54,8 +54,8 @@ namespace Expense.Tracker.Services.Implementation
                     var targetDate = currentDate.AddMonths(-i);
                     var (monthStart, monthEnd) = AnalyticsHelpers.GetMonthDateRange(targetDate);
 
-                    var filteredTransactions = await _transactionRepository.GetByDateRangeAsync(monthStart, monthEnd);
-                    var expenseTransactions = filteredTransactions.Where(t => t.Type == TransactionType.EXPENSE && t.UserId == requestor.UserId);
+                    var filteredTransactions = await _transactionRepository.GetByDateRangeAsync(monthStart, monthEnd, requestor.UserId);
+                    var expenseTransactions = filteredTransactions.Where(t => t.Type == TransactionType.EXPENSE);
 
                     var monthlySpending = new MonthlySpending
                     {
@@ -87,8 +87,8 @@ namespace Expense.Tracker.Services.Implementation
                 
                 var categories = await _categoryRepository.GetAllAsync();
 
-                var currentMonthTransactions = await _transactionRepository.GetByDateRangeAsync(currentMonthStart, currentMonthEnd);
-                var previousMonthTransactions = await _transactionRepository.GetByDateRangeAsync(previousMonthStart, previousMonthEnd);
+                var currentMonthTransactions = await _transactionRepository.GetByDateRangeAsync(currentMonthStart, currentMonthEnd, userId.ToString());
+                var previousMonthTransactions = await _transactionRepository.GetByDateRangeAsync(previousMonthStart, previousMonthEnd, userId.ToString());
 
                 var categoryTrends = new List<CategoryTrend>();
 
