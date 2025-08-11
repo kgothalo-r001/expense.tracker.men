@@ -55,7 +55,7 @@ namespace Expense.Tracker.Services.Implementation
                     var (monthStart, monthEnd) = AnalyticsHelpers.GetMonthDateRange(targetDate);
 
                     var filteredTransactions = await _transactionRepository.GetByDateRangeAsync(monthStart, monthEnd);
-                    var expenseTransactions = filteredTransactions.Where(t => t.Type == TransactionType.EXPENSE);
+                    var expenseTransactions = filteredTransactions.Where(t => t.Type == TransactionType.EXPENSE && t.UserId == requestor.UserId);
 
                     var monthlySpending = new MonthlySpending
                     {
