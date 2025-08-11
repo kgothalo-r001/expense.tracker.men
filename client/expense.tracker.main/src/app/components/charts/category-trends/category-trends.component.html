@@ -49,10 +49,6 @@
     <!-- Category Summary -->
     <div class="category-summary" *ngIf="!isLoading && !hasError && categoryData.length > 0">
       <h4 class="summary-title">Category Breakdown</h4>
-      <div class="summary-total">
-        <span class="total-label">Total Spending:</span>
-        <span class="total-amount">{{ getFormattedAmount(getTotalAmount()) }}</span>
-      </div>
       <div class="category-list">
         <div 
           *ngFor="let category of categoryData; trackBy: trackByCategory"

@@ -3,7 +3,6 @@ import { Transaction } from '../../auto/autobusinessclient';
 import { TransactionState } from '../../../abstractions';
 import * as TransactionActions from './transaction.actions';
 
-// Specialize the generic TransactionState with our Transaction type
 export type AppTransactionState = TransactionState<Transaction>;
 
 export const initialState: AppTransactionState = {

@@ -3,7 +3,6 @@ import { Category } from '../../auto/autobusinessclient';
 import { CategoryState } from '../../../abstractions'
 import * as CategoryActions from './category.actions';
 
-// Specialize the generic CategoryState with our Category type
 export type AppCategoryState = CategoryState<Category>;
 
 export const initialState: AppCategoryState = {
