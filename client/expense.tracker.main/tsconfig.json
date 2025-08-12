@@ -2,6 +2,10 @@
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ],
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
     "strict": true,
@@ -15,15 +19,19 @@
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
     "importHelpers": true,
-    "target": "ES2022",
-    "module": "ES2022",
+    "target": "es2022",
+    "module": "esnext",
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": false
-  }
+  },
+  "include": [
+    "**/*.ts"
+  ]
 }

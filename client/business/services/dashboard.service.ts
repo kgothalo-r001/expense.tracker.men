@@ -7,8 +7,8 @@ import {
   BudgetProjection,
   MonthlySpending,
   CategoryTrend
-} from '../../../auto/autoexpensetrackerclient';
-import { API_CLIENT } from '../app.config';
+} from '../auto/autobusinessclient';
+import { API_CLIENT } from '../config';
 
 @Injectable({
   providedIn: 'root'

@@ -2,7 +2,7 @@ import { Component, OnInit, inject, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subject, takeUntil } from 'rxjs';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../../../../business';
 import { UserDto } from '../../../../auto/autoexpensetrackerclient';
 
 @Component({

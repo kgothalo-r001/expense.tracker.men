@@ -269,11 +269,12 @@ namespace Expense.Tracker.Services.Repositories
             return transactions;
         }
 
-        public async Task<IEnumerable<Transaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<IEnumerable<Transaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, string userId)
         {
             var transactions = await _context.Transactions
                 .Include(t => t.Category)
                 .Where(t => t.Date >= startDate && t.Date <= endDate)
+                .Where(t => t.UserId == userId)
                 .OrderByDescending(t => t.Date)
                 .ToListAsync();
                 

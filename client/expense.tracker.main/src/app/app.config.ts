@@ -5,14 +5,9 @@ import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { Client, IClient, API_BASE_URL } from '../../auto/autoexpensetrackerclient';
-import { transactionReducer } from './store';
-import { TransactionEffects } from './store';
-import { categoryReducer } from './store/category/category.reducer';
-import { CategoryEffects } from './store/category/category.effects';
-import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { transactionReducer, TransactionEffects, categoryReducer, CategoryEffects, AuthInterceptor, API_CLIENT as BUSINESS_API_CLIENT } from '../../../business';
 import { routes } from './app.routes';
 
-// Create injection token for the client
 export const API_CLIENT = new InjectionToken<IClient>('API_CLIENT');
 
 export const appConfig: ApplicationConfig = {
@@ -31,8 +26,12 @@ export const appConfig: ApplicationConfig = {
       autoPause: true
     }),
     { 
-      provide: API_CLIENT, 
+      provide: BUSINESS_API_CLIENT, 
       useClass: Client 
+    },
+    {
+      provide: API_CLIENT,
+      useExisting: BUSINESS_API_CLIENT
     },
     {
       provide: API_BASE_URL, 

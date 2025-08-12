@@ -1,8 +1,8 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { TransactionState } from '..';
-import { Transaction } from '../../../../auto/autoexpensetrackerclient';
+import { AppTransactionState } from './transaction.reducer';
+import { Transaction } from '../../auto/autobusinessclient';
 
-export const selectTransactionState = createFeatureSelector<TransactionState>('transactions');
+export const selectTransactionState = createFeatureSelector<AppTransactionState>('transactions');
 
 export const selectAllTransactions = createSelector(
   selectTransactionState,

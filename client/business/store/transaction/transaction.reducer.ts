@@ -1,15 +1,11 @@
 import { createReducer, on } from '@ngrx/store';
-import { Transaction } from '../../../../auto/autoexpensetrackerclient';
+import { Transaction } from '../../auto/autobusinessclient';
+import { TransactionState } from '../../../abstractions';
 import * as TransactionActions from './transaction.actions';
 
-export interface TransactionState {
-  transactions: Transaction[];
-  loading: boolean;
-  error: string | null;
-  selectedTransaction: Transaction | null;
-}
+export type AppTransactionState = TransactionState<Transaction>;
 
-export const initialState: TransactionState = {
+export const initialState: AppTransactionState = {
   transactions: [],
   loading: false,
   error: null,

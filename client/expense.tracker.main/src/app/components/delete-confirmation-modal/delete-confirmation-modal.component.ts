@@ -1,8 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
-import * as TransactionActions from '../../store/transaction/transaction.actions';
-import { AppState } from '../../store/app.state';
+import { TransactionActions, AppState } from '../../../../../business';
 
 @Component({
   selector: 'app-delete-confirmation-modal',

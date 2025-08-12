@@ -78,7 +78,7 @@ namespace Expense.Tracker.Services.Abstractions.Interfaces
     public interface ITransactionRepository : IRepository<Transaction>
     {
         Task<IEnumerable<Transaction>> GetByCategoryIdAsync(string categoryId);
-        Task<IEnumerable<Transaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<IEnumerable<Transaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, string? userId);
         Task<IEnumerable<Transaction>> GetByTypeAsync(TransactionType type);
         Task<IEnumerable<Transaction>> GetRecurringAsync();
         Task<decimal> GetTotalAmountByTypeAsync(TransactionType type, DateTime? startDate = null, DateTime? endDate = null);

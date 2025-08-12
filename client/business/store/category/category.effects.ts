@@ -4,7 +4,7 @@ import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { map, exhaustMap, catchError, take } from 'rxjs/operators';
 import { CategoryService } from '../../services/category.service';
-import { Category } from '../../../../auto/autoexpensetrackerclient';
+import { Category } from '../../auto/autobusinessclient';
 import * as CategoryActions from './category.actions';
 import { selectAllCategories } from './category.selectors';
 
