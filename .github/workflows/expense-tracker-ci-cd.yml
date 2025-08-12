@@ -91,13 +91,25 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('client/**/package.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
+
+    - name: 📦 Install & Build Abstractions
+      working-directory: ${{ env.CLIENT_PATH }}
+      run: |
+        npm install
+        npm run build
+
+    - name: 📦 Install Business
+      working-directory: ${{ env.CLIENT_PATH }}
+      run: |
+        npm install
+        npm run build
       
     - name: 📦 Install & Build Main Application
       working-directory: ${{ env.CLIENT_PATH }}
       run: |
-        npm install --legacy-peer-deps
+        npm install
         npm run genClient
-        npm run build --configuration=production --budget-error=none --budget-warning=none
+        npm run build
         
     - name: 🚀 Upload Frontend Artifact
       if: success()
