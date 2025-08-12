@@ -23,6 +23,8 @@ env:
   # Solution and Project Paths
   SOLUTION_PATH: 'server/Expense.Tracker.Server/Expense.Tracker.Server.sln'
   CLIENT_PATH: 'client/expense.tracker.main'
+  ABSTRACTIONS_PATH: 'client/abstractions'
+  BUSINESS_PATH: 'client/business'
   
   # Build Configuration
   BUILD_CONFIGURATION: 'Release'
@@ -93,13 +95,13 @@ jobs:
           ${{ runner.os }}-node-
 
     - name: 📦 Install & Build Abstractions
-      working-directory: ${{ env.CLIENT_PATH }}
+      working-directory: ${{ env.ABSTRACTIONS_PATH }}
       run: |
         npm install
         npm run build
 
-    - name: 📦 Install Business
-      working-directory: ${{ env.CLIENT_PATH }}
+    - name: 📦 Install & Build Business
+      working-directory: ${{ env.BUSINESS_PATH }}
       run: |
         npm install
         npm run build
