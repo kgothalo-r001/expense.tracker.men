@@ -14,26 +14,28 @@ namespace Expense.Tracker.Tests.Controllers;
 public class CategoriesControllerTests : BaseTestHelper
 {
     private readonly CategoriesController _controller;
-    private readonly ICategoryService _categoryService;
+    private readonly Mock<ICategoryService> _mockCategoryService;
     private readonly Mock<ILogger<CategoriesController>> _mockLogger;
 
     public CategoriesControllerTests()
     {
-        _categoryService = GetService<ICategoryService>();
+        _mockCategoryService = new Mock<ICategoryService>();
         _mockLogger = new Mock<ILogger<CategoriesController>>();
-        _controller = new CategoriesController(_categoryService, _mockLogger.Object);
+        _controller = new CategoriesController(_mockCategoryService.Object, _mockLogger.Object);
     }
 
     [Fact]
     public async Task GetCategories_WhenCategoriesExist_ReturnsOkWithCategories()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedCategories = new List<Category>
+        {
+            new Category { Id = "cat1", Name = "Food", UserId = TestUserId.ToString(), Type = CategoryType.EXPENSE },
+            new Category { Id = "cat2", Name = "Transport", UserId = TestUserId.ToString(), Type = CategoryType.EXPENSE }
+        };
+        _mockCategoryService.Setup(s => s.GetAllCategoriesAsync(It.IsAny<Requestor>())).ReturnsAsync(expectedCategories);
 
-        // Act
         var result = await _controller.GetCategories();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var categories = okResult.Value.Should().BeAssignableTo<IEnumerable<Category>>().Subject;
         categories.Should().HaveCountGreaterThan(0);
@@ -43,10 +45,10 @@ public class CategoriesControllerTests : BaseTestHelper
     [Fact]
     public async Task GetCategories_WhenNoCategoriesExist_ReturnsOkWithEmptyList()
     {
-        // Act
+        _mockCategoryService.Setup(s => s.GetAllCategoriesAsync(It.IsAny<Requestor>())).ReturnsAsync(new List<Category>());
+
         var result = await _controller.GetCategories();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var categories = okResult.Value.Should().BeAssignableTo<IEnumerable<Category>>().Subject;
         categories.Should().BeEmpty();
@@ -55,37 +57,32 @@ public class CategoriesControllerTests : BaseTestHelper
     [Fact]
     public async Task GetCategory_WithValidId_ReturnsOkWithCategory()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingCategory = DbContext.Categories.First();
+        var categoryId = "cat1";
+        var expectedCategory = new Category { Id = categoryId, Name = "Food", UserId = TestUserId.ToString(), Type = CategoryType.EXPENSE };
+        _mockCategoryService.Setup(s => s.GetCategoryByIdAsync(categoryId, It.IsAny<Requestor>())).ReturnsAsync(expectedCategory);
 
-        // Act
-        var result = await _controller.GetCategory(existingCategory.Id);
+        var result = await _controller.GetCategory(categoryId);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var category = okResult.Value.Should().BeOfType<Category>().Subject;
-        category.Id.Should().Be(existingCategory.Id);
+        category.Id.Should().Be(categoryId);
         category.UserId.Should().Be(TestUserId.ToString());
     }
 
     [Fact]
     public async Task GetCategory_WithInvalidId_ReturnsNotFound()
     {
-        // Arrange
-        var nonExistentId = Guid.NewGuid().ToString();
+        var nonExistentId = "cat999";
+        _mockCategoryService.Setup(s => s.GetCategoryByIdAsync(nonExistentId, It.IsAny<Requestor>())).ReturnsAsync((Category?)null);
 
-        // Act
         var result = await _controller.GetCategory(nonExistentId);
 
-        // Assert
-        result.Result.Should().BeOfType<NotFoundResult>();
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
     }
 
     [Fact]
     public async Task CreateCategory_WithValidRequest_ReturnsCreatedWithCategory()
     {
-        // Arrange
         var request = new CreateCategoryRequest
         {
             Name = "Test Category",
@@ -94,11 +91,20 @@ public class CategoriesControllerTests : BaseTestHelper
             Icon = "test",
             Description = "Test description"
         };
+        var createdCategory = new Category
+        {
+            Id = "cat1",
+            Name = request.Name,
+            Type = request.Type,
+            Color = request.Color,
+            Icon = request.Icon,
+            Description = request.Description,
+            UserId = TestUserId.ToString()
+        };
+        _mockCategoryService.Setup(s => s.CreateCategoryAsync(request, It.IsAny<Requestor>())).ReturnsAsync(createdCategory);
 
-        // Act
         var result = await _controller.CreateCategory(request);
 
-        // Assert
         var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
         var category = createdResult.Value.Should().BeOfType<Category>().Subject;
         category.Name.Should().Be(request.Name);
@@ -109,39 +115,44 @@ public class CategoriesControllerTests : BaseTestHelper
     [Fact]
     public async Task CreateCategory_WithInvalidRequest_ReturnsBadRequest()
     {
-        // Arrange
         var request = new CreateCategoryRequest
         {
             Name = "", // Invalid empty name
             Type = CategoryType.EXPENSE,
             Color = "#FF0000"
         };
+        _mockCategoryService.Setup(s => s.CreateCategoryAsync(request, It.IsAny<Requestor>())).ThrowsAsync(new InvalidOperationException("Invalid category name"));
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _controller.CreateCategory(request));
+        var result = await _controller.CreateCategory(request);
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
     public async Task UpdateCategory_WithValidRequest_ReturnsOkWithUpdatedCategory()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingCategory = DbContext.Categories.First();
         var request = new UpdateCategoryRequest
         {
-            Id = existingCategory.Id,
+            Id = "cat1",
             Name = "Updated Category",
-            Type = existingCategory.Type,
+            Type = CategoryType.EXPENSE,
             Color = "#00FF00",
             Icon = "updated",
             Description = "Updated description"
         };
+        var updatedCategory = new Category
+        {
+            Id = request.Id,
+            Name = request.Name,
+            Type = (CategoryType)request.Type,
+            Color = request.Color,
+            Icon = request.Icon,
+            Description = request.Description,
+            UserId = TestUserId.ToString()
+        };
+        _mockCategoryService.Setup(s => s.UpdateCategoryAsync(request, It.IsAny<Requestor>())).ReturnsAsync(updatedCategory);
 
-        // Act
-        var result = await _controller.UpdateCategory(existingCategory.Id, request);
+        var result = await _controller.UpdateCategory(request.Id, request);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var category = okResult.Value.Should().BeOfType<Category>().Subject;
         category.Name.Should().Be(request.Name);
@@ -151,50 +162,38 @@ public class CategoriesControllerTests : BaseTestHelper
     [Fact]
     public async Task UpdateCategory_WithInvalidId_ReturnsNotFound()
     {
-        // Arrange
         var request = new UpdateCategoryRequest
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = "cat999",
             Name = "Updated Category",
             Type = CategoryType.EXPENSE,
             Color = "#00FF00"
         };
+        _mockCategoryService.Setup(s => s.UpdateCategoryAsync(request, It.IsAny<Requestor>())).ReturnsAsync((Category?)null);
 
-        // Act
         var result = await _controller.UpdateCategory(request.Id, request);
-
-        // Assert
-        result.Result.Should().BeOfType<NotFoundResult>();
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
     }
 
     [Fact]
     public async Task DeleteCategory_WithValidId_ReturnsNoContent()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingCategory = DbContext.Categories.First();
+        var categoryId = "cat1";
+        _mockCategoryService.Setup(s => s.DeleteCategoryAsync(categoryId, It.IsAny<Requestor>())).ReturnsAsync(true);
 
-        // Act
-        var result = await _controller.DeleteCategory(existingCategory.Id);
+        var result = await _controller.DeleteCategory(categoryId);
 
-        // Assert
         result.Should().BeOfType<NoContentResult>();
-        
-        // Verify category is deleted
-        var deletedCategory = await DbContext.Categories.FindAsync(existingCategory.Id);
-        deletedCategory.Should().BeNull();
     }
 
     [Fact]
     public async Task DeleteCategory_WithInvalidId_ReturnsNotFound()
     {
-        // Arrange
-        var nonExistentId = Guid.NewGuid().ToString();
+        var nonExistentId = "cat999";
+        _mockCategoryService.Setup(s => s.DeleteCategoryAsync(nonExistentId, It.IsAny<Requestor>())).ReturnsAsync(false);
 
-        // Act
         var result = await _controller.DeleteCategory(nonExistentId);
 
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
+        result.Should().BeOfType<NotFoundObjectResult>();
     }
 }

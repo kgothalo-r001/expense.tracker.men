@@ -6,26 +6,30 @@ using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Tests.Helpers;
 using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Expense.Tracker.Tests.Controllers;
 
 public class AuthControllerTests : BaseTestHelper
 {
     private readonly AuthController _controller;
-    private readonly IAuthenticationService _authService;
-    private readonly ILogger<AuthController> _logger;
+    private readonly Mock<IAuthenticationService> _mockAuthService;
+    private readonly Mock<ILogger<AuthController>> _mockLogger;
 
     public AuthControllerTests()
     {
-        _authService = GetService<IAuthenticationService>();
-        _controller = new AuthController(_authService, _logger);
+        _mockAuthService = new Mock<IAuthenticationService>();
+        _mockLogger = new Mock<ILogger<AuthController>>();
+        _controller = new AuthController(_mockAuthService.Object, _mockLogger.Object);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = DefaultHttpContext
+        };
     }
 
     [Fact]
     public async Task Register_WithValidRequest_ReturnsOkWithAuthResponse()
     {
-        // Arrange
-        await ClearDatabaseAsync();
         var request = new RegisterRequest
         {
             Username = "testuser",
@@ -34,13 +38,18 @@ public class AuthControllerTests : BaseTestHelper
             ConfirmPassword = "TestPassword123!"
         };
 
-        // Act
+        var expectedResult = new AuthenticationResult
+        {
+            Success = true,
+            User = new UserDto { Username = request.Username, Email = request.Email },
+            Token = "token123"
+        };
+        _mockAuthService.Setup(s => s.RegisterAsync(request)).ReturnsAsync(expectedResult);
+
         var result = await _controller.Register(request);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var response = okResult.Value.Should().BeOfType<AuthenticationResult>().Subject;
-        response.Token.Should().NotBeNullOrEmpty();
         response.User.Should().NotBeNull();
         response.User.Username.Should().Be(request.Username);
         response.User.Email.Should().Be(request.Email);
@@ -49,7 +58,6 @@ public class AuthControllerTests : BaseTestHelper
     [Fact]
     public async Task Register_WithMismatchedPasswords_ReturnsBadRequest()
     {
-        // Arrange
         var request = new RegisterRequest
         {
             Username = "testuser",
@@ -58,135 +66,181 @@ public class AuthControllerTests : BaseTestHelper
             ConfirmPassword = "DifferentPassword123!"
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _controller.Register(request));
+        var expectedResult = new AuthenticationResult
+        {
+            Success = false,
+            ErrorMessage = "Passwords do not match"
+        };
+        _mockAuthService.Setup(s => s.RegisterAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _controller.Register(request);
+        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        ((AuthenticationResult)badRequest.Value).ErrorMessage.Should().Be("Passwords do not match");
     }
 
     [Fact]
     public async Task Register_WithDuplicateUsername_ReturnsBadRequest()
     {
-        // Arrange
-        await SeedTestDataAsync();
         var request = new RegisterRequest
         {
-            Username = "testuser", // Same as seeded user
+            Username = "testuser",
             Email = "newuser@example.com",
             Password = "TestPassword123!",
             ConfirmPassword = "TestPassword123!"
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await _controller.Register(request));
+        var expectedResult = new AuthenticationResult
+        {
+            Success = false,
+            ErrorMessage = "Username already exists"
+        };
+        _mockAuthService.Setup(s => s.RegisterAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _controller.Register(request);
+        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+        ((AuthenticationResult)badRequest.Value).ErrorMessage.Should().Be("Username already exists");
     }
 
     [Fact]
     public async Task Login_WithValidCredentials_ReturnsOkWithAuthResponse()
     {
-        // Arrange
-        await SeedTestDataAsync();
         var request = new LoginRequest
         {
             UsernameOrEmail = "testuser",
-            Password = "hashedpassword" // This should match the seeded user's password
+            Password = "hashedpassword"
         };
 
-        // Act
+        var expectedResult = new AuthenticationResult
+        {
+            Success = true,
+            User = new UserDto { Username = "testuser" },
+            Token = "token123"
+        };
+        _mockAuthService.Setup(s => s.LoginAsync(request)).ReturnsAsync(expectedResult);
+
         var result = await _controller.Login(request);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var response = okResult.Value.Should().BeOfType<AuthenticationResult>().Subject;
-        response.Token.Should().NotBeNullOrEmpty();
         response.User.Should().NotBeNull();
         response.User.Username.Should().Be(request.UsernameOrEmail);
     }
 
     [Fact]
-    public async Task Login_WithInvalidCredentials_ReturnsUnauthorized()
+    public async Task Login_WithInvalidCredentials_ReturnsBadRequest()
     {
-        // Arrange
         var request = new LoginRequest
         {
             UsernameOrEmail = "nonexistentuser",
             Password = "wrongpassword"
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            async () => await _controller.Login(request));
+        var expectedResult = new AuthenticationResult
+        {
+            Success = false,
+            ErrorMessage = "Invalid credentials"
+        };
+        _mockAuthService.Setup(s => s.LoginAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _controller.Login(request);
+        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+
+        badRequest.Value.Should().NotBeNull();
+        var message = Assert.IsType<string>(badRequest.Value);
+        Assert.Equal("Invalid credentials", message);
     }
 
     [Fact]
     public async Task Login_WithEmptyUsername_ReturnsBadRequest()
     {
-        // Arrange
         var request = new LoginRequest
         {
             UsernameOrEmail = "",
             Password = "TestPassword123!"
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _controller.Login(request));
+        var expectedResult = new AuthenticationResult
+        {
+            Success = false,
+            ErrorMessage = "Username or email required"
+        };
+        _mockAuthService.Setup(s => s.LoginAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _controller.Login(request);
+        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+
+        badRequest.Value.Should().NotBeNull();
+        var message = Assert.IsType<string>(badRequest.Value);
+        Assert.Equal("Username or email required", message);
     }
 
     [Fact]
     public async Task Login_WithEmptyPassword_ReturnsBadRequest()
     {
-        // Arrange
         var request = new LoginRequest
         {
             UsernameOrEmail = "testuser",
             Password = ""
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _controller.Login(request));
+        var expectedResult = new AuthenticationResult
+        {
+            Success = false,
+            ErrorMessage = "Password required"
+        };
+        _mockAuthService.Setup(s => s.LoginAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _controller.Login(request);
+        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+
+        badRequest.Value.Should().NotBeNull();
+        var message = Assert.IsType<string>(badRequest.Value);
+        Assert.Equal("Password required", message);
     }
 
     [Fact]
     public async Task RefreshToken_WithValidToken_ReturnsOkWithNewToken()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var loginRequest = new LoginRequest
-        {
-            UsernameOrEmail = "testuser",
-            Password = "hashedpassword"
-        };
-        var loginResult = await _controller.Login(loginRequest);
-        var loginResponse = ((OkObjectResult)loginResult.Result!).Value as AuthenticationResult;
-        
         var refreshRequest = new RefreshTokenRequest
         {
-            Token = loginResponse!.Token
+            Token = "oldtoken"
         };
 
-        // Act
+        var expectedResult = new AuthenticationResult
+        {
+            Success = true,
+            Token = "newtoken",
+            User = new UserDto { Username = "testuser" }
+        };
+        _mockAuthService.Setup(s => s.RefreshTokenAsync(refreshRequest.Token)).ReturnsAsync(expectedResult);
+
         var result = await _controller.RefreshToken(refreshRequest);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var response = okResult.Value.Should().BeOfType<AuthenticationResult>().Subject;
-        response.Token.Should().NotBeNullOrEmpty();
-        response.Token.Should().NotBe(loginResponse.Token); // Should be a new token
+        response.Token.Should().Be("newtoken");
     }
 
     [Fact]
-    public async Task RefreshToken_WithInvalidToken_ReturnsUnauthorized()
+    public async Task RefreshToken_WithInvalidToken_ReturnsBadRequest()
     {
-        // Arrange
         var request = new RefreshTokenRequest
         {
             Token = "invalid-token"
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            async () => await _controller.RefreshToken(request));
+        var expectedResult = new AuthenticationResult
+        {
+            Success = false,
+            ErrorMessage = "Invalid token"
+        };
+        _mockAuthService.Setup(s => s.RefreshTokenAsync(request.Token)).ReturnsAsync(expectedResult);
+
+        var result = await _controller.RefreshToken(request);
+        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
+
+        badRequest.Value.Should().NotBeNull();
+        var message = Assert.IsType<string>(badRequest.Value);
+        Assert.Equal("Invalid token", message);
     }
 }

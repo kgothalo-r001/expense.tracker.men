@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(new { message = result.ErrorMessage });
+            return BadRequest(result.ErrorMessage);
         }
 
         SetAuthCookie(result.Token);
@@ -178,7 +178,7 @@ public class AuthController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(new { message = result.ErrorMessage });
+            return BadRequest(result.ErrorMessage);
         }
 
         return Ok(result);

@@ -84,6 +84,11 @@ public class AuthenticationService : IAuthenticationService
         
         try
         {
+            // Validate email format
+            if (!await _userValidationService.IsEmailValid(request.Email))
+            {
+                result.ValidationErrors.Add("Invalid email address.");
+            }
             // Validate username availability using validation service
             if (!await _userValidationService.IsUsernameAvailableAsync(request.Username))
             {

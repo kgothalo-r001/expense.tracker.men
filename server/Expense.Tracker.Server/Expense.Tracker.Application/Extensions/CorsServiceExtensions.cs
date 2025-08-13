@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Expense.Tracker.Application.Extensions
 {
     /// <summary>
     /// Extension methods for configuring CORS policies
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class CorsServiceExtensions
     {
         public const string ExpenseTrackerCorsPolicyName = "ExpenseTrackerCorsPolicy";

@@ -1,9 +1,8 @@
 using Expense.Tracker.Services.Abstractions.Constants;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Abstractions.Enums;
-using Expense.Tracker.Services.Implementation.Factories;
 using Expense.Tracker.Services.Helpers;
+using Expense.Tracker.Services.Implementation.Factories;
 
 namespace Expense.Tracker.Services.Implementation
 {

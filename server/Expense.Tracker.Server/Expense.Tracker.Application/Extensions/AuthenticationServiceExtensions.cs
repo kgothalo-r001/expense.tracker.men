@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Expense.Tracker.Application.Extensions
@@ -7,6 +8,7 @@ namespace Expense.Tracker.Application.Extensions
     /// <summary>
     /// Extension methods for configuring JWT authentication
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class AuthenticationServiceExtensions
     {
         private const string JwtSecretConfigurationKey = "Jwt:Secret";

@@ -14,131 +14,146 @@ namespace Expense.Tracker.Tests.Controllers;
 public class AnalyticsControllerTests : BaseTestHelper
 {
     private readonly AnalyticsController _controller;
-    private readonly IAnalyticsService _analyticsService;
+    private readonly Mock<IAnalyticsService> _mockAnalyticsService;
     private readonly Mock<ILogger<AnalyticsController>> _mockLogger;
 
     public AnalyticsControllerTests()
     {
-        _analyticsService = GetService<IAnalyticsService>();
+        _mockAnalyticsService = new Mock<IAnalyticsService>();
         _mockLogger = new Mock<ILogger<AnalyticsController>>();
-        _controller = new AnalyticsController(_analyticsService, _mockLogger.Object);
+        _controller = new AnalyticsController(_mockAnalyticsService.Object, _mockLogger.Object);
     }
 
     [Fact]
     public async Task GetMonthlySpendingTrends_WithDefaultMonths_ReturnsOkWithTrends()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedTrends = new List<MonthlySpending>
+        {
+            new MonthlySpending { Month = "2024-05", Amount = 100, TransactionCount = 2 }
+        };
+        _mockAnalyticsService
+            .Setup(s => s.GetMonthlySpendingTrendsAsync(It.IsAny<Requestor>(), 12))
+            .ReturnsAsync(expectedTrends);
 
-        // Act
         var result = await _controller.GetMonthlySpendingTrends();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var trends = okResult.Value.Should().BeAssignableTo<IEnumerable<MonthlySpending>>().Subject;
-        trends.Should().NotBeNull();
+        trends.Should().BeEquivalentTo(expectedTrends);
     }
 
     [Fact]
     public async Task GetMonthlySpendingTrends_WithCustomMonths_ReturnsFilteredTrends()
     {
-        // Arrange
-        await SeedTestDataAsync();
         var monthsBack = 6;
+        var expectedTrends = new List<MonthlySpending>
+        {
+            new MonthlySpending { Month = "2024-05", Amount = 50, TransactionCount = 1 }
+        };
+        _mockAnalyticsService
+            .Setup(s => s.GetMonthlySpendingTrendsAsync(It.IsAny<Requestor>(), monthsBack))
+            .ReturnsAsync(expectedTrends);
 
-        // Act
         var result = await _controller.GetMonthlySpendingTrends(monthsBack);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var trends = okResult.Value.Should().BeAssignableTo<IEnumerable<MonthlySpending>>().Subject;
-        trends.Should().NotBeNull();
-        trends.Count().Should().BeLessOrEqualTo(monthsBack);
+        trends.Should().BeEquivalentTo(expectedTrends);
     }
 
     [Fact]
     public async Task GetCategoryTrends_ReturnsOkWithCategoryTrends()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedTrends = new List<CategoryTrend>
+        {
+            new CategoryTrend { CategoryId = "cat1", CategoryName = "Food", CurrentMonthAmount = 100, PreviousMonthAmount = 80, PercentageChange = 25 }
+        };
+        _mockAnalyticsService
+            .Setup(s => s.GetCategoryTrendsAsync(It.IsAny<Requestor>()))
+            .ReturnsAsync(expectedTrends);
 
-        // Act
         var result = await _controller.GetCategoryTrends();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var trends = okResult.Value.Should().BeAssignableTo<IEnumerable<CategoryTrend>>().Subject;
-        trends.Should().NotBeNull();
+        trends.Should().BeEquivalentTo(expectedTrends);
     }
 
     [Fact]
     public async Task GetBudgetProjection_ReturnsOkWithProjection()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedProjection = new BudgetProjection
+        {
+            ProjectedMonthlyExpenses = 200,
+            ProjectedYearlyExpenses = 2400,
+            RecommendedMonthlySavings = 100,
+            CategoryProjections = new List<CategoryProjection>()
+        };
+        _mockAnalyticsService
+            .Setup(s => s.GenerateBudgetProjectionAsync(It.IsAny<Requestor>()))
+            .ReturnsAsync(expectedProjection);
 
-        // Act
         var result = await _controller.GetBudgetProjection();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var projection = okResult.Value.Should().BeOfType<BudgetProjection>().Subject;
-        projection.Should().NotBeNull();
-        projection.ProjectedMonthlyExpenses.Should().BeGreaterOrEqualTo(0);
+        projection.Should().BeEquivalentTo(expectedProjection);
     }
 
     [Fact]
     public async Task GetMonthlyAverage_ForExpenses_ReturnsOkWithAverage()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedAverage = 150m;
+        _mockAnalyticsService
+            .Setup(s => s.CalculateMonthlyAverageAsync(TransactionType.EXPENSE, 6))
+            .ReturnsAsync(expectedAverage);
 
-        // Act
         var result = await _controller.GetMonthlyAverage(TransactionType.EXPENSE);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var average = okResult.Value.Should().BeOfType<decimal>().Subject;
-        average.Should().BeGreaterOrEqualTo(0);
+        average.Should().Be(expectedAverage);
     }
 
     [Fact]
     public async Task GetMonthlyAverage_ForIncome_ReturnsOkWithAverage()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedAverage = 3000m;
+        _mockAnalyticsService
+            .Setup(s => s.CalculateMonthlyAverageAsync(TransactionType.INCOME, 6))
+            .ReturnsAsync(expectedAverage);
 
-        // Act
         var result = await _controller.GetMonthlyAverage(TransactionType.INCOME);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var average = okResult.Value.Should().BeOfType<decimal>().Subject;
-        average.Should().BeGreaterOrEqualTo(0);
+        average.Should().Be(expectedAverage);
     }
 
     [Fact]
     public async Task GetYearlyProjection_ForExpenses_ReturnsOkWithProjection()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedProjection = 1800m;
+        _mockAnalyticsService
+            .Setup(s => s.CalculateYearlyProjectionAsync(TransactionType.EXPENSE))
+            .ReturnsAsync(expectedProjection);
 
-        // Act
         var result = await _controller.GetYearlyProjection(TransactionType.EXPENSE);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var projection = okResult.Value.Should().BeOfType<decimal>().Subject;
-        projection.Should().BeGreaterOrEqualTo(0);
+        projection.Should().Be(expectedProjection);
     }
 
     [Fact]
     public async Task GetCategoryTrends_WhenNoData_ReturnsEmptyTrends()
     {
-        // Act (no seed data)
+        _mockAnalyticsService
+            .Setup(s => s.GetCategoryTrendsAsync(It.IsAny<Requestor>()))
+            .ReturnsAsync(new List<CategoryTrend>());
+
         var result = await _controller.GetCategoryTrends();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var trends = okResult.Value.Should().BeAssignableTo<IEnumerable<CategoryTrend>>().Subject;
         trends.Should().BeEmpty();

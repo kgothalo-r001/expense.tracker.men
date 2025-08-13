@@ -1,8 +1,7 @@
 using Expense.Tracker.Services.Abstractions.Constants;
+using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Abstractions.Enums;
-using Expense.Tracker.Services.Helpers;
 
 namespace Expense.Tracker.Services.Implementation
 {
@@ -51,8 +50,8 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<ExpenseAnalytics> GetExpenseAnalyticsAsync(Requestor requestor, int monthsBack = 12)
         {
-            var monthlyAverage = await _analyticsService.CalculateMonthlyAverageAsync(TransactionType.EXPENSE, requestor, monthsBack);
-            var yearlyProjection = await _analyticsService.CalculateYearlyProjectionAsync(TransactionType.EXPENSE, requestor);
+            var monthlyAverage = await _analyticsService.CalculateMonthlyAverageAsync(TransactionType.EXPENSE, monthsBack);
+            var yearlyProjection = await _analyticsService.CalculateYearlyProjectionAsync(TransactionType.EXPENSE);
             var monthlyTrends = await _analyticsService.GetMonthlySpendingTrendsAsync(requestor, monthsBack);
             var categoryTrends = await _analyticsService.GetCategoryTrendsAsync(requestor);
 

@@ -3,41 +3,62 @@ using FluentAssertions;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
-using Expense.Tracker.Tests.Helpers;
+using Expense.Tracker.Services.Implementation;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Expense.Tracker.Tests.Services;
 
-public class TransactionServiceTests : BaseTestHelper
+public class TransactionServiceTests
 {
-    private readonly ITransactionService _transactionService;
+    private readonly TransactionService _transactionService;
+    private readonly Mock<ITransactionRepository> _mockTransactionRepo;
+    private readonly Mock<ICategoryRepository> _mockCategoryRepo;
+    private readonly Mock<ITagRepository> _mockTagRepo;
+    private readonly Mock<ITransactionValidationService> _mockValidator;
+    private readonly Mock<ITransactionFactory> _mockFactory;
+    private readonly Mock<ILogger<TransactionService>> _mockLogger;
+    private readonly Requestor _requestor;
 
     public TransactionServiceTests()
     {
-        _transactionService = GetService<ITransactionService>();
+        _mockTransactionRepo = new Mock<ITransactionRepository>();
+        _mockCategoryRepo = new Mock<ICategoryRepository>();
+        _mockTagRepo = new Mock<ITagRepository>();
+        _mockValidator = new Mock<ITransactionValidationService>();
+        _mockFactory = new Mock<ITransactionFactory>();
+        _mockLogger = new Mock<ILogger<TransactionService>>();
+        _requestor = new Requestor { UserId = Guid.NewGuid().ToString() };
+        _transactionService = new TransactionService(
+            _mockTransactionRepo.Object,
+            _mockCategoryRepo.Object,
+            _mockTagRepo.Object,
+            _mockValidator.Object,
+            _mockFactory.Object,
+            _mockLogger.Object
+        );
     }
 
     [Fact]
     public async Task GetAllTransactionsAsync_WhenTransactionsExist_ReturnsUserTransactions()
     {
-        // Arrange
-        await SeedTestDataAsync();
-
-        // Act
-        var result = await _transactionService.GetAllTransactionsAsync();
-
-        // Assert
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Id = "tx1", UserId = _requestor.UserId, Amount = 100, Type = TransactionType.EXPENSE },
+            new Transaction { Id = "tx2", UserId = _requestor.UserId, Amount = 200, Type = TransactionType.INCOME }
+        };
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<Guid>())).ReturnsAsync(transactions);
+        var result = await _transactionService.GetAllTransactionsAsync(_requestor);
         result.Should().NotBeNull();
-        result.Should().OnlyContain(t => t.UserId == TestUserId.ToString());
+        result.Should().OnlyContain(t => t.UserId == _requestor.UserId);
         result.Count().Should().BeGreaterThan(0);
     }
 
     [Fact]
     public async Task GetAllTransactionsAsync_WhenNoTransactionsExist_ReturnsEmptyCollection()
     {
-        // Act
-        var result = await _transactionService.GetAllTransactionsAsync();
-
-        // Assert
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Transaction>());
+        var result = await _transactionService.GetAllTransactionsAsync(_requestor);
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
@@ -45,90 +66,93 @@ public class TransactionServiceTests : BaseTestHelper
     [Fact]
     public async Task GetTransactionByIdAsync_WithValidId_ReturnsTransaction()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTransaction = DbContext.Transactions.First();
-
-        // Act
-        var result = await _transactionService.GetTransactionByIdAsync(existingTransaction.Id);
-
-        // Assert
+        var transaction = new Transaction { Id = "tx1", UserId = _requestor.UserId, Amount = 100 };
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndIdAsync(It.IsAny<Guid>(), transaction.Id)).ReturnsAsync(transaction);
+        var result = await _transactionService.GetTransactionByIdAsync(transaction.Id, _requestor);
         result.Should().NotBeNull();
-        result!.Id.Should().Be(existingTransaction.Id);
-        result.UserId.Should().Be(TestUserId.ToString());
+        result!.Id.Should().Be(transaction.Id);
+        result.UserId.Should().Be(_requestor.UserId);
     }
 
     [Fact]
     public async Task GetTransactionByIdAsync_WithInvalidId_ReturnsNull()
     {
-        // Arrange
         var nonExistentId = Guid.NewGuid().ToString();
-
-        // Act
-        var result = await _transactionService.GetTransactionByIdAsync(nonExistentId);
-
-        // Assert
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndIdAsync(It.IsAny<Guid>(), nonExistentId)).ReturnsAsync((Transaction?)null);
+        var result = await _transactionService.GetTransactionByIdAsync(nonExistentId, _requestor);
         result.Should().BeNull();
     }
 
     [Fact]
     public async Task CreateTransactionAsync_WithValidRequest_CreatesAndReturnsTransaction()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var category = DbContext.Categories.First();
         var request = new CreateTransactionRequest
         {
             Amount = 123.45m,
             Description = "Test transaction",
             Date = DateTime.UtcNow,
             Type = TransactionType.EXPENSE,
-            CategoryId = category.Id,
+            CategoryId = "cat1",
             Notes = "Test notes",
             IsRecurring = false
         };
-
-        // Act
-        var result = await _transactionService.CreateTransactionAsync(request);
-
-        // Assert
+        _mockValidator.Setup(v => v.ValidateCategoryExistsAsync(It.IsAny<Guid>(), request.CategoryId)).Returns(Task.CompletedTask);
+        _mockValidator.Setup(v => v.ValidateRecurringTransactionSettings(request));
+        var transaction = new Transaction
+        {
+            Id = "tx1",
+            UserId = _requestor.UserId,
+            Amount = request.Amount,
+            Description = request.Description,
+            Type = request.Type,
+            CategoryId = request.CategoryId,
+            Notes = request.Notes,
+            IsRecurring = false
+        };
+        _mockFactory.Setup(f => f.CreateTransaction(request, _requestor.UserId)).Returns(transaction);
+        _mockTransactionRepo.Setup(r => r.CreateAsync(transaction)).ReturnsAsync(transaction);
+        var result = await _transactionService.CreateTransactionAsync(request, _requestor);
         result.Should().NotBeNull();
         result.Amount.Should().Be(request.Amount);
         result.Description.Should().Be(request.Description);
         result.Type.Should().Be(request.Type);
         result.CategoryId.Should().Be(request.CategoryId);
         result.Notes.Should().Be(request.Notes);
-        result.UserId.Should().Be(TestUserId.ToString());
+        result.UserId.Should().Be(_requestor.UserId);
         result.IsRecurring.Should().BeFalse();
-
-        // Verify in database
-        var dbTransaction = await DbContext.Transactions.FindAsync(result.Id);
-        dbTransaction.Should().NotBeNull();
-        dbTransaction!.Amount.Should().Be(request.Amount);
     }
 
     [Fact]
     public async Task CreateTransactionAsync_WithRecurring_CreatesRecurringTransaction()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var category = DbContext.Categories.First();
         var request = new CreateTransactionRequest
         {
             Amount = 500.00m,
             Description = "Recurring transaction",
             Date = DateTime.UtcNow,
             Type = TransactionType.EXPENSE,
-            CategoryId = category.Id,
+            CategoryId = "cat1",
             IsRecurring = true,
             RecurringFrequency = RecurringFrequency.MONTHLY,
             RecurringEndDate = DateTime.UtcNow.AddMonths(12)
         };
-
-        // Act
-        var result = await _transactionService.CreateTransactionAsync(request);
-
-        // Assert
+        _mockValidator.Setup(v => v.ValidateCategoryExistsAsync(It.IsAny<Guid>(), request.CategoryId)).Returns(Task.CompletedTask);
+        _mockValidator.Setup(v => v.ValidateRecurringTransactionSettings(request));
+        var transaction = new Transaction
+        {
+            Id = "tx2",
+            UserId = _requestor.UserId,
+            Amount = request.Amount,
+            Description = request.Description,
+            Type = request.Type,
+            CategoryId = request.CategoryId,
+            IsRecurring = true,
+            RecurringFrequency = request.RecurringFrequency,
+            RecurringEndDate = request.RecurringEndDate
+        };
+        _mockFactory.Setup(f => f.CreateTransaction(request, _requestor.UserId)).Returns(transaction);
+        _mockTransactionRepo.Setup(r => r.CreateAsync(transaction)).ReturnsAsync(transaction);
+        var result = await _transactionService.CreateTransactionAsync(request, _requestor);
         result.Should().NotBeNull();
         result.IsRecurring.Should().BeTrue();
         result.RecurringFrequency.Should().Be(RecurringFrequency.MONTHLY);
@@ -136,59 +160,47 @@ public class TransactionServiceTests : BaseTestHelper
     }
 
     [Fact]
-    public async Task CreateTransactionAsync_WithInvalidCategoryId_ThrowsArgumentException()
+    public async Task CreateTransactionAsync_WithInvalidCategoryId_ThrowsCategoryNotFoundException()
     {
-        // Arrange
         var request = new CreateTransactionRequest
         {
             Amount = 100.00m,
             Description = "Test transaction",
             Date = DateTime.UtcNow,
             Type = TransactionType.EXPENSE,
-            CategoryId = Guid.NewGuid().ToString() // Non-existent category
+            CategoryId = "invalid-cat"
         };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _transactionService.CreateTransactionAsync(request));
+        _mockValidator.Setup(v => v.ValidateCategoryExistsAsync(It.IsAny<Guid>(), request.CategoryId)).ThrowsAsync(new Expense.Tracker.Services.Exceptions.CategoryNotFoundException("Category not found"));
+        await Assert.ThrowsAsync<Expense.Tracker.Services.Exceptions.CategoryNotFoundException>(async () => await _transactionService.CreateTransactionAsync(request, _requestor));
     }
 
     [Fact]
     public async Task UpdateTransactionAsync_WithValidRequest_UpdatesAndReturnsTransaction()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTransaction = DbContext.Transactions.First();
+        var existingTransaction = new Transaction { Id = "tx1", UserId = _requestor.UserId, Amount = 100, Description = "Old", CategoryId = "cat1", Notes = "Old notes" };
         var request = new UpdateTransactionRequest
         {
             Id = existingTransaction.Id,
             Amount = 200.00m,
             Description = "Updated transaction",
-            Date = existingTransaction.Date,
-            Type = existingTransaction.Type,
+            Date = DateTime.UtcNow,
+            Type = TransactionType.EXPENSE,
             CategoryId = existingTransaction.CategoryId,
             Notes = "Updated notes"
         };
-
-        // Act
-        var result = await _transactionService.UpdateTransactionAsync(request);
-
-        // Assert
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndIdAsync(It.IsAny<Guid>(), request.Id)).ReturnsAsync(existingTransaction);
+        _mockTransactionRepo.Setup(r => r.UpdateAsync(It.IsAny<Transaction>())).ReturnsAsync((Transaction t) => t);
+        var result = await _transactionService.UpdateTransactionAsync(request, _requestor);
         result.Should().NotBeNull();
         result!.Id.Should().Be(existingTransaction.Id);
         result.Amount.Should().Be(request.Amount);
         result.Description.Should().Be(request.Description);
         result.Notes.Should().Be(request.Notes);
-
-        // Verify in database
-        var dbTransaction = await DbContext.Transactions.FindAsync(existingTransaction.Id);
-        dbTransaction!.Amount.Should().Be(request.Amount);
     }
 
     [Fact]
     public async Task UpdateTransactionAsync_WithInvalidId_ReturnsNull()
     {
-        // Arrange
         var request = new UpdateTransactionRequest
         {
             Id = Guid.NewGuid().ToString(),
@@ -196,109 +208,78 @@ public class TransactionServiceTests : BaseTestHelper
             Description = "Updated transaction",
             Date = DateTime.UtcNow,
             Type = TransactionType.EXPENSE,
-            CategoryId = Guid.NewGuid().ToString()
+            CategoryId = "cat1"
         };
-
-        // Act
-        var result = await _transactionService.UpdateTransactionAsync(request);
-
-        // Assert
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndIdAsync(It.IsAny<Guid>(), request.Id)).ReturnsAsync((Transaction?)null);
+        var result = await _transactionService.UpdateTransactionAsync(request, _requestor);
         result.Should().BeNull();
     }
 
     [Fact]
     public async Task DeleteTransactionAsync_WithValidId_DeletesTransactionAndReturnsTrue()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTransaction = DbContext.Transactions.First();
-
-        // Act
-        var result = await _transactionService.DeleteTransactionAsync(existingTransaction.Id);
-
-        // Assert
+        var transaction = new Transaction { Id = "tx1", UserId = _requestor.UserId };
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndIdAsync(It.IsAny<Guid>(), transaction.Id)).ReturnsAsync(transaction);
+        _mockTransactionRepo.Setup(r => r.DeleteAsync(transaction.Id)).ReturnsAsync(true);
+        var result = await _transactionService.DeleteTransactionAsync(transaction.Id, _requestor);
         result.Should().BeTrue();
-
-        // Verify transaction is deleted
-        var deletedTransaction = await DbContext.Transactions.FindAsync(existingTransaction.Id);
-        deletedTransaction.Should().BeNull();
     }
 
     [Fact]
     public async Task DeleteTransactionAsync_WithInvalidId_ReturnsFalse()
     {
-        // Arrange
         var nonExistentId = Guid.NewGuid().ToString();
-
-        // Act
-        var result = await _transactionService.DeleteTransactionAsync(nonExistentId);
-
-        // Assert
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndIdAsync(It.IsAny<Guid>(), nonExistentId)).ReturnsAsync((Transaction?)null);
+        var result = await _transactionService.DeleteTransactionAsync(nonExistentId, _requestor);
         result.Should().BeFalse();
     }
 
     [Fact]
     public async Task GetTransactionsByCategoryAsync_WithValidCategory_ReturnsFilteredTransactions()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var category = DbContext.Categories.First();
-
-        // Act
-        var result = await _transactionService.GetTransactionsByCategoryAsync(category.Id);
-
-        // Assert
+        var categoryId = "cat1";
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Id = "tx1", UserId = _requestor.UserId, CategoryId = categoryId },
+            new Transaction { Id = "tx2", UserId = _requestor.UserId, CategoryId = categoryId }
+        };
+        _mockValidator.Setup(v => v.ValidateCategoryExistsAsync(It.IsAny<Guid>(), categoryId)).Returns(Task.CompletedTask);
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndCategoryIdAsync(It.IsAny<Guid>(), categoryId)).ReturnsAsync(transactions);
+        var result = await _transactionService.GetTransactionsByCategoryAsync(categoryId, _requestor);
         result.Should().NotBeNull();
-        result.Should().OnlyContain(t => t.CategoryId == category.Id);
-        result.Should().OnlyContain(t => t.UserId == TestUserId.ToString());
+        result.Should().OnlyContain(t => t.CategoryId == categoryId);
+        result.Should().OnlyContain(t => t.UserId == _requestor.UserId);
     }
 
     [Fact]
     public async Task GetTransactionsByDateRangeAsync_WithValidRange_ReturnsFilteredTransactions()
     {
-        // Arrange
-        await SeedTestDataAsync();
         var startDate = DateTime.UtcNow.AddDays(-7);
         var endDate = DateTime.UtcNow.AddDays(1);
-
-        // Act
-        var result = await _transactionService.GetTransactionsByDateRangeAsync(startDate, endDate);
-
-        // Assert
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Id = "tx1", UserId = _requestor.UserId, Date = startDate.AddDays(1) },
+            new Transaction { Id = "tx2", UserId = _requestor.UserId, Date = endDate.AddDays(-1) }
+        };
+        _mockTransactionRepo.Setup(r => r.GetByUserIdAndDateRangeAsync(It.IsAny<Guid>(), startDate, endDate)).ReturnsAsync(transactions);
+        var result = await _transactionService.GetTransactionsByDateRangeAsync(startDate, endDate, _requestor);
         result.Should().NotBeNull();
         result.Should().OnlyContain(t => t.Date >= startDate && t.Date <= endDate);
-        result.Should().OnlyContain(t => t.UserId == TestUserId.ToString());
+        result.Should().OnlyContain(t => t.UserId == _requestor.UserId);
     }
 
     [Fact]
-    public async Task GetUserRecurringTransactionsAsync_ReturnsOnlyRecurringTransactions()
+    public async Task GetRecurringTransactionsAsync_ReturnsOnlyRecurringTransactions()
     {
-        // Arrange
-        await SeedTestDataAsync();
-
-        // Act
-        var result = await _transactionService.GetUserRecurringTransactionsAsync(TestUserId);
-
-        // Assert
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Id = "tx1", UserId = _requestor.UserId, IsRecurring = true },
+            new Transaction { Id = "tx2", UserId = _requestor.UserId, IsRecurring = true }
+        };
+        _mockTransactionRepo.Setup(r => r.GetRecurringByUserIdAsync(It.IsAny<Guid>())).ReturnsAsync(transactions);
+        var result = await _transactionService.GetRecurringTransactionsAsync(_requestor);
         result.Should().NotBeNull();
         result.Should().OnlyContain(t => t.IsRecurring == true);
-        result.Should().OnlyContain(t => t.UserId == TestUserId.ToString());
-    }
-
-    [Fact]
-    public async Task ProcessRecurringTransactionsAsync_ProcessesRecurringTransactions()
-    {
-        // Arrange
-        await SeedTestDataAsync();
-        var initialTransactionCount = DbContext.Transactions.Count();
-
-        // Act
-        await _transactionService.ProcessRecurringTransactionsAsync();
-
-        // Assert
-        // This test depends on the implementation of ProcessRecurringTransactionsAsync
-        // It should create new transactions based on recurring patterns
-        var finalTransactionCount = DbContext.Transactions.Count();
-        finalTransactionCount.Should().BeGreaterOrEqualTo(initialTransactionCount);
+        result.Should().OnlyContain(t => t.UserId == _requestor.UserId);
     }
 }

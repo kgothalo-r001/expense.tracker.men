@@ -26,7 +26,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var tags = await _tagService.GetAllTagsAsync(Requestor);
+                var tags = await _tagService.GetAllTagsAsync();
                 return Ok(tags);
             }
             catch (Exception ex)
