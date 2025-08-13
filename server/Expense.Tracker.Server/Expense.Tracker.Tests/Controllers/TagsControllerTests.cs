@@ -13,26 +13,28 @@ namespace Expense.Tracker.Tests.Controllers;
 public class TagsControllerTests : BaseTestHelper
 {
     private readonly TagsController _controller;
-    private readonly ITagService _tagService;
+    private readonly Mock<ITagService> _mockTagService;
     private readonly Mock<ILogger<TagsController>> _mockLogger;
 
     public TagsControllerTests()
     {
-        _tagService = GetService<ITagService>();
+        _mockTagService = new Mock<ITagService>();
         _mockLogger = new Mock<ILogger<TagsController>>();
-        _controller = new TagsController(_tagService, _mockLogger.Object);
+        _controller = new TagsController(_mockTagService.Object, _mockLogger.Object);
     }
 
     [Fact]
     public async Task GetTags_WhenTagsExist_ReturnsOkWithTags()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedTags = new List<Tag>
+        {
+            new Tag { Id = "tag1", Name = "Food", Color = "#FF0000", UsageCount = 2 },
+            new Tag { Id = "tag2", Name = "Transport", Color = "#00FF00", UsageCount = 1 }
+        };
+        _mockTagService.Setup(s => s.GetAllTagsAsync()).ReturnsAsync(expectedTags);
 
-        // Act
         var result = await _controller.GetTags();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var tags = okResult.Value.Should().BeAssignableTo<IEnumerable<Tag>>().Subject;
         tags.Should().HaveCountGreaterThan(0);
@@ -41,10 +43,10 @@ public class TagsControllerTests : BaseTestHelper
     [Fact]
     public async Task GetTags_WhenNoTagsExist_ReturnsOkWithEmptyList()
     {
-        // Act
+        _mockTagService.Setup(s => s.GetAllTagsAsync()).ReturnsAsync(new List<Tag>());
+
         var result = await _controller.GetTags();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var tags = okResult.Value.Should().BeAssignableTo<IEnumerable<Tag>>().Subject;
         tags.Should().BeEmpty();
@@ -53,47 +55,48 @@ public class TagsControllerTests : BaseTestHelper
     [Fact]
     public async Task GetTag_WithValidId_ReturnsOkWithTag()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
+        var tagId = "tag1";
+        var expectedTag = new Tag { Id = tagId, Name = "Food", Color = "#FF0000", UsageCount = 2 };
+        _mockTagService.Setup(s => s.GetTagByIdAsync(tagId, It.IsAny<Requestor>())).ReturnsAsync(expectedTag);
 
-        // Act
-        var result = await _controller.GetTag(existingTag.Id);
+        var result = await _controller.GetTag(tagId);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var tag = okResult.Value.Should().BeOfType<Tag>().Subject;
-        tag.Id.Should().Be(existingTag.Id);
+        tag.Id.Should().Be(tagId);
         tag.Name.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
     public async Task GetTag_WithInvalidId_ReturnsNotFound()
     {
-        // Arrange
-        var nonExistentId = Guid.NewGuid().ToString();
+        var nonExistentId = "tag999";
+        _mockTagService.Setup(s => s.GetTagByIdAsync(nonExistentId, It.IsAny<Requestor>())).ReturnsAsync((Tag?)null);
 
-        // Act
         var result = await _controller.GetTag(nonExistentId);
 
-        // Assert
-        result.Result.Should().BeOfType<NotFoundResult>();
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
     }
 
     [Fact]
     public async Task CreateTag_WithValidRequest_ReturnsCreatedWithTag()
     {
-        // Arrange
         var request = new CreateTagRequest
         {
             Name = "TestTag",
             Color = "#FF0000"
         };
+        var createdTag = new Tag
+        {
+            Id = "tag1",
+            Name = request.Name,
+            Color = request.Color,
+            UsageCount = 0
+        };
+        _mockTagService.Setup(s => s.CreateTagAsync(request, It.IsAny<Requestor>())).ReturnsAsync(createdTag);
 
-        // Act
         var result = await _controller.CreateTag(request);
 
-        // Assert
         var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
         var tag = createdResult.Value.Should().BeOfType<Tag>().Subject;
         tag.Name.Should().Be(request.Name);
@@ -104,58 +107,50 @@ public class TagsControllerTests : BaseTestHelper
     [Fact]
     public async Task CreateTag_WithInvalidRequest_ReturnsBadRequest()
     {
-        // Arrange
         var request = new CreateTagRequest
         {
             Name = "" // Invalid empty name
         };
+        _mockTagService.Setup(s => s.CreateTagAsync(request, It.IsAny<Requestor>())).ThrowsAsync(new InvalidOperationException("Invalid tag name"));
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _controller.CreateTag(request));
+        var result = await _controller.CreateTag(request);
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
     public async Task DeleteTag_WithValidId_ReturnsNoContent()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
+        var tagId = "tag1";
+        _mockTagService.Setup(s => s.DeleteTagAsync(tagId, It.IsAny<Requestor>())).ReturnsAsync(true);
 
-        // Act
-        var result = await _controller.DeleteTag(existingTag.Id);
+        var result = await _controller.DeleteTag(tagId);
 
-        // Assert
         result.Should().BeOfType<NoContentResult>();
-        
-        // Verify tag is deleted
-        var deletedTag = await DbContext.Tags.FindAsync(existingTag.Id);
-        deletedTag.Should().BeNull();
     }
 
     [Fact]
     public async Task DeleteTag_WithInvalidId_ReturnsNotFound()
     {
-        // Arrange
-        var nonExistentId = Guid.NewGuid().ToString();
+        var nonExistentId = "tag999";
+        _mockTagService.Setup(s => s.DeleteTagAsync(nonExistentId, It.IsAny<Requestor>())).ReturnsAsync(false);
 
-        // Act
         var result = await _controller.DeleteTag(nonExistentId);
 
-        // Assert
-        result.Should().BeOfType<NotFoundResult>();
+        result.Should().BeOfType<NotFoundObjectResult>();
     }
 
     [Fact]
     public async Task GetPopularTags_ReturnsOkWithPopularTags()
     {
-        // Arrange
-        await SeedTestDataAsync();
+        var expectedTags = new List<Tag>
+        {
+            new Tag { Id = "tag1", Name = "Food", Color = "#FF0000", UsageCount = 2 },
+            new Tag { Id = "tag2", Name = "Transport", Color = "#00FF00", UsageCount = 1 }
+        };
+        _mockTagService.Setup(s => s.GetPopularTagsAsync(It.IsAny<Requestor>(), 10)).ReturnsAsync(expectedTags);
 
-        // Act
         var result = await _controller.GetPopularTags();
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var tags = okResult.Value.Should().BeAssignableTo<IEnumerable<Tag>>().Subject;
         tags.Should().NotBeNull();
@@ -164,14 +159,16 @@ public class TagsControllerTests : BaseTestHelper
     [Fact]
     public async Task GetPopularTags_WithCustomLimit_ReturnsLimitedTags()
     {
-        // Arrange
-        await SeedTestDataAsync();
         var limit = 5;
+        var expectedTags = new List<Tag>
+        {
+            new Tag { Id = "tag1", Name = "Food", Color = "#FF0000", UsageCount = 2 },
+            new Tag { Id = "tag2", Name = "Transport", Color = "#00FF00", UsageCount = 1 }
+        };
+        _mockTagService.Setup(s => s.GetPopularTagsAsync(It.IsAny<Requestor>(), limit)).ReturnsAsync(expectedTags);
 
-        // Act
         var result = await _controller.GetPopularTags(limit);
 
-        // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
         var tags = okResult.Value.Should().BeAssignableTo<IEnumerable<Tag>>().Subject;
         tags.Count().Should().BeLessOrEqualTo(limit);

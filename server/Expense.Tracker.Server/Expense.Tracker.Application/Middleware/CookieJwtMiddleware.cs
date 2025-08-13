@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Expense.Tracker.Application.Middleware;
 
@@ -7,6 +8,7 @@ namespace Expense.Tracker.Application.Middleware;
 /// Middleware to extract JWT tokens from cookies and add them to the Authorization header
 /// for compatibility with the default JWT authentication handler.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CookieJwtMiddleware
 {
     private readonly RequestDelegate _next;

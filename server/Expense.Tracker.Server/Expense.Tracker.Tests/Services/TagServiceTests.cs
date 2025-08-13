@@ -2,29 +2,30 @@ using Xunit;
 using FluentAssertions;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Tests.Helpers;
+using Expense.Tracker.Services.Implementation;
+using Moq;
 
 namespace Expense.Tracker.Tests.Services;
 
-public class TagServiceTests : BaseTestHelper
+public class TagServiceTests
 {
-    private readonly ITagService _tagService;
+    private readonly TagService _tagService;
+    private readonly Mock<ITagRepository> _mockTagRepo;
+    private readonly Requestor _requestor;
 
     public TagServiceTests()
     {
-        _tagService = GetService<ITagService>();
+        _mockTagRepo = new Mock<ITagRepository>();
+        _requestor = new Requestor { UserId = Guid.NewGuid().ToString() };
+        _tagService = new TagService(_mockTagRepo.Object);
     }
 
     [Fact]
-    public async Task GetAllTagsAsync_WhenTagsExist_ReturnsUserTags()
+    public async Task GetAllTagsAsync_WhenTagsExist_ReturnsTags()
     {
-        // Arrange
-        await SeedTestDataAsync();
-
-        // Act
+        var tags = new List<Tag> { new Tag { Id = "tag1", Name = "Test", Color = "red", UsageCount = 1 } };
+        _mockTagRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(tags);
         var result = await _tagService.GetAllTagsAsync();
-
-        // Assert
         result.Should().NotBeNull();
         result.Count().Should().BeGreaterThan(0);
     }
@@ -32,10 +33,8 @@ public class TagServiceTests : BaseTestHelper
     [Fact]
     public async Task GetAllTagsAsync_WhenNoTagsExist_ReturnsEmptyCollection()
     {
-        // Act
+        _mockTagRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Tag>());
         var result = await _tagService.GetAllTagsAsync();
-
-        // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
@@ -43,173 +42,102 @@ public class TagServiceTests : BaseTestHelper
     [Fact]
     public async Task GetTagByIdAsync_WithValidId_ReturnsTag()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
-
-        // Act
-        var result = await _tagService.GetTagByIdAsync(existingTag.Id);
-
-        // Assert
+        var tag = new Tag { Id = "tag1", Name = "Test", Color = "red", UsageCount = 1 };
+        _mockTagRepo.Setup(r => r.GetByIdAsync(tag.Id)).ReturnsAsync(tag);
+        var result = await _tagService.GetTagByIdAsync(tag.Id, _requestor);
         result.Should().NotBeNull();
-        result!.Id.Should().Be(existingTag.Id);
-        result.Id.Should().Be(TestUserId.ToString());
+        result!.Id.Should().Be(tag.Id);
     }
 
     [Fact]
     public async Task GetTagByIdAsync_WithInvalidId_ReturnsNull()
     {
-        // Arrange
         var nonExistentId = Guid.NewGuid().ToString();
-
-        // Act
-        var result = await _tagService.GetTagByIdAsync(nonExistentId);
-
-        // Assert
+        _mockTagRepo.Setup(r => r.GetByIdAsync(nonExistentId)).ReturnsAsync((Tag?)null);
+        var result = await _tagService.GetTagByIdAsync(nonExistentId, _requestor);
         result.Should().BeNull();
     }
 
     [Fact]
     public async Task CreateTagAsync_WithValidRequest_CreatesAndReturnsTag()
     {
-        // Arrange
-        var request = new CreateTagRequest
-        {
-            Name = "TestTag",
-            Color = "Test tag description"
-        };
-
-        // Act
-        var result = await _tagService.CreateTagAsync(request);
-
-        // Assert
+        var request = new CreateTagRequest { Name = "TestTag", Color = "red" };
+        _mockTagRepo.Setup(r => r.GetByNameAsync(request.Name)).ReturnsAsync((Tag?)null);
+        var createdTag = new Tag { Id = "tag1", Name = request.Name, Color = request.Color, UsageCount = 0 };
+        _mockTagRepo.Setup(r => r.CreateAsync(It.IsAny<Tag>())).ReturnsAsync(createdTag);
+        var result = await _tagService.CreateTagAsync(request, _requestor);
         result.Should().NotBeNull();
         result.Name.Should().Be(request.Name);
         result.Color.Should().Be(request.Color);
-        result.Id.Should().Be(TestUserId.ToString());
         result.UsageCount.Should().Be(0);
-
-        // Verify in database
-        var dbTag = await DbContext.Tags.FindAsync(result.Id);
-        dbTag.Should().NotBeNull();
-        dbTag!.Name.Should().Be(request.Name);
     }
 
     [Fact]
     public async Task CreateTagAsync_WithEmptyName_ThrowsArgumentException()
     {
-        // Arrange
-        var request = new CreateTagRequest
-        {
-            Name = "", // Invalid empty name
-            Color = "Test description"
-        };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(
-            async () => await _tagService.CreateTagAsync(request));
+        var request = new CreateTagRequest { Name = "", Color = "red" };
+        // Simulate validation in service (if implemented)
+        // If not implemented, this test will fail until validation is added
+        await Assert.ThrowsAsync<ArgumentException>(async () => await _tagService.CreateTagAsync(request, _requestor));
     }
 
     [Fact]
     public async Task CreateTagAsync_WithDuplicateName_ThrowsInvalidOperationException()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
-        var request = new CreateTagRequest
-        {
-            Name = existingTag.Name, // Duplicate name
-            Color = "Test description"
-        };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await _tagService.CreateTagAsync(request));
+        var existingTag = new Tag { Id = "tag1", Name = "TestTag", Color = "red", UsageCount = 0 };
+        var request = new CreateTagRequest { Name = existingTag.Name, Color = "red" };
+        _mockTagRepo.Setup(r => r.GetByNameAsync(request.Name)).ReturnsAsync(existingTag);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await _tagService.CreateTagAsync(request, _requestor));
     }
 
     [Fact]
     public async Task DeleteTagAsync_WithValidId_DeletesTagAndReturnsTrue()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
-
-        // Act
-        var result = await _tagService.DeleteTagAsync(existingTag.Id);
-
-        // Assert
+        var tagId = "tag1";
+        _mockTagRepo.Setup(r => r.DeleteAsync(tagId)).ReturnsAsync(true);
+        var result = await _tagService.DeleteTagAsync(tagId, _requestor);
         result.Should().BeTrue();
-
-        // Verify tag is deleted
-        var deletedTag = await DbContext.Tags.FindAsync(existingTag.Id);
-        deletedTag.Should().BeNull();
     }
 
     [Fact]
     public async Task DeleteTagAsync_WithInvalidId_ReturnsFalse()
     {
-        // Arrange
         var nonExistentId = Guid.NewGuid().ToString();
-
-        // Act
-        var result = await _tagService.DeleteTagAsync(nonExistentId);
-
-        // Assert
+        _mockTagRepo.Setup(r => r.DeleteAsync(nonExistentId)).ReturnsAsync(false);
+        var result = await _tagService.DeleteTagAsync(nonExistentId, _requestor);
         result.Should().BeFalse();
     }
 
     [Fact]
-    public async Task UpdateTagUsageAsync_WithValidTagName_IncrementsUsageCount()
+    public async Task UpdateTagUsageAsync_WithValidTagName_CallsIncrementUsage()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
-        var originalUsageCount = existingTag.UsageCount;
-
-        // Act
-        await _tagService.UpdateTagUsageAsync(existingTag.Name);
-
-        // Assert
-        // Refresh from database
-        var updatedTag = await DbContext.Tags.FindAsync(existingTag.Id);
-        updatedTag.Should().NotBeNull();
-        updatedTag!.UsageCount.Should().Be(originalUsageCount + 1);
+        var tagName = "TestTag";
+        _mockTagRepo.Setup(r => r.IncrementUsageAsync(tagName)).Returns(Task.CompletedTask).Verifiable();
+        await _tagService.UpdateTagUsageAsync(tagName, _requestor);
+        _mockTagRepo.Verify(r => r.IncrementUsageAsync(tagName), Times.Once);
     }
 
     [Fact]
     public async Task UpdateTagUsageAsync_WithNonExistentTag_DoesNotThrow()
     {
-        // Arrange
         var nonExistentTagName = "nonexistenttag";
-
-        // Act & Assert
-        var exception = await Record.ExceptionAsync(
-            async () => await _tagService.UpdateTagUsageAsync(nonExistentTagName));
-        
-        exception.Should().BeNull(); // Should not throw
+        _mockTagRepo.Setup(r => r.IncrementUsageAsync(nonExistentTagName)).Returns(Task.CompletedTask);
+        var exception = await Record.ExceptionAsync(async () => await _tagService.UpdateTagUsageAsync(nonExistentTagName, _requestor));
+        exception.Should().BeNull();
     }
 
     [Fact]
     public async Task GetPopularTagsAsync_WithDefaultLimit_ReturnsPopularTags()
     {
-        // Arrange
-        await SeedTestDataAsync();
-        
-        // Update usage counts to create popularity
-        var tags = DbContext.Tags.ToList();
-        tags[0].UsageCount = 10;
-        tags[1].UsageCount = 5;
-        await DbContext.SaveChangesAsync();
-
-        // Act
-        var result = await _tagService.GetPopularTagsAsync();
-
-        // Assert
+        var tags = new List<Tag>
+        {
+            new Tag { Id = "tag1", Name = "Test1", UsageCount = 10 },
+            new Tag { Id = "tag2", Name = "Test2", UsageCount = 5 }
+        };
+        _mockTagRepo.Setup(r => r.GetPopularAsync(10)).ReturnsAsync(tags);
+        var result = await _tagService.GetPopularTagsAsync(_requestor);
         result.Should().NotBeNull();
-        result.Should().OnlyContain(t => t.Id == TestUserId.ToString());
-        result.Count().Should().BeLessOrEqualTo(10); // Default limit
-        
-        // Should be ordered by usage count descending
+        result.Count().Should().BeLessOrEqualTo(10);
         var resultList = result.ToList();
         if (resultList.Count > 1)
         {
@@ -223,87 +151,22 @@ public class TagServiceTests : BaseTestHelper
     [Fact]
     public async Task GetPopularTagsAsync_WithCustomLimit_ReturnsLimitedTags()
     {
-        // Arrange
-        await SeedTestDataAsync();
         var limit = 1;
-
-        // Act
-        var result = await _tagService.GetPopularTagsAsync(limit);
-
-        // Assert
+        var tags = new List<Tag> { new Tag { Id = "tag1", Name = "Test1", UsageCount = 10 } };
+        _mockTagRepo.Setup(r => r.GetPopularAsync(limit)).ReturnsAsync(tags);
+        var result = await _tagService.GetPopularTagsAsync(_requestor, limit);
         result.Should().NotBeNull();
         result.Count().Should().BeLessOrEqualTo(limit);
-        result.Should().OnlyContain(t => t.Id == TestUserId.ToString());
     }
 
     [Fact]
     public async Task GetPopularTagsAsync_WhenNoTags_ReturnsEmptyCollection()
     {
-        // Act
-        var result = await _tagService.GetPopularTagsAsync();
-
-        // Assert
+        _mockTagRepo.Setup(r => r.GetPopularAsync(10)).ReturnsAsync(new List<Tag>());
+        var result = await _tagService.GetPopularTagsAsync(_requestor);
         result.Should().NotBeNull();
         result.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task GetUserTagsAsync_WithValidUserId_ReturnsUserSpecificTags()
-    {
-        // Arrange
-        await SeedTestDataAsync();
-
-        // Act
-        var result = await _tagService.GetUserTagsAsync(TestUserId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().OnlyContain(t => t.Id == TestUserId.ToString());
-        result.Count().Should().BeGreaterThan(0);
-    }
-
-    [Fact]
-    public async Task GetUserTagByIdAsync_WithValidIdAndUserId_ReturnsTag()
-    {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
-
-        // Act
-        var result = await _tagService.GetUserTagByIdAsync(existingTag.Id, TestUserId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(existingTag.Id);
-        result.Id.Should().Be(TestUserId.ToString());
-    }
-
-    [Fact]
-    public async Task GetUserTagByIdAsync_WithDifferentUserId_ReturnsNull()
-    {
-        // Arrange
-        await SeedTestDataAsync();
-        var existingTag = DbContext.Tags.First();
-        var differentUserId = Guid.NewGuid();
-
-        // Act
-        var result = await _tagService.GetUserTagByIdAsync(existingTag.Id, differentUserId);
-
-        // Assert
-        result.Should().BeNull(); // Should not return tag for different user
-    }
-
-    [Fact]
-    public async Task GetUserPopularTagsAsync_WithValidUserId_ReturnsUserSpecificPopularTags()
-    {
-        // Arrange
-        await SeedTestDataAsync();
-
-        // Act
-        var result = await _tagService.GetUserPopularTagsAsync(TestUserId);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().OnlyContain(t => t.Id == TestUserId.ToString());
-    }
+    // The following tests are for methods not present in TagService and have been removed for clarity and correctness.
 }

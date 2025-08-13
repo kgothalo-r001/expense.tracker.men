@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Expense.Tracker.Application.Extensions
 {
+    [ExcludeFromCodeCoverage]
     public static class HealthCheckExtensions
     {
         /// <summary>

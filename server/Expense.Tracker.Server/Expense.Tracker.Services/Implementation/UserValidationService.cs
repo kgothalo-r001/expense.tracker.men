@@ -46,6 +46,23 @@ public class UserValidationService : IUserValidationService, IDisposable
         }
     }
 
+    public async Task<bool> IsEmailValid(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            await Task.Yield();
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public string HashPassword(string password)
     {
         return BCrypt.Net.BCrypt.HashPassword(password, BcryptWorkFactor);

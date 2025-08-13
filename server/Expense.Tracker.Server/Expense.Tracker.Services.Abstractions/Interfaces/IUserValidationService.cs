@@ -17,6 +17,13 @@ public interface IUserValidationService
     Task<bool> IsEmailAvailableAsync(string email);
 
     /// <summary>
+    /// Checks if a username is valid.
+    /// </summary>
+    /// <param name="email"> The username to validate.</param>
+    /// <returns>True if valid, false otherwise.</returns>
+    Task<bool> IsEmailValid(string email);
+
+    /// <summary>
     /// Hashes a password using BCrypt.
     /// </summary>
     /// <param name="password">The plain text password.</param>

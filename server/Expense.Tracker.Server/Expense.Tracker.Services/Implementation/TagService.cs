@@ -13,7 +13,7 @@ namespace Expense.Tracker.Services.Implementation
             _tagRepository = tagRepository;
         }
 
-        public async Task<IEnumerable<Tag>> GetAllTagsAsync(Requestor requestor)
+        public async Task<IEnumerable<Tag>> GetAllTagsAsync()
         {
             return await _tagRepository.GetAllAsync();
         }
@@ -25,6 +25,11 @@ namespace Expense.Tracker.Services.Implementation
 
         public async Task<Tag> CreateTagAsync(CreateTagRequest request, Requestor requestor)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new ArgumentException("Tag name cannot be empty.", nameof(request.Name));
+            }
+
             var existingTag = await _tagRepository.GetByNameAsync(request.Name);
             if (existingTag != null)
             {

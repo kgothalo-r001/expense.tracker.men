@@ -82,7 +82,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var average = await _analyticsService.CalculateMonthlyAverageAsync(type, Requestor, monthsBack);
+                var average = await _analyticsService.CalculateMonthlyAverageAsync(type, monthsBack);
                 return Ok(average);
             }
             catch (Exception ex)
@@ -100,7 +100,7 @@ namespace Expense.Tracker.Peer.Controllers
         {
             try
             {
-                var projection = await _analyticsService.CalculateYearlyProjectionAsync(type, Requestor);
+                var projection = await _analyticsService.CalculateYearlyProjectionAsync(type);
                 return Ok(projection);
             }
             catch (Exception ex)

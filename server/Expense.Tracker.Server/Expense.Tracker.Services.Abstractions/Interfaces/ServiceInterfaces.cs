@@ -37,7 +37,7 @@ namespace Expense.Tracker.Services.Abstractions.Interfaces
 
     public interface ITagService
     {
-        Task<IEnumerable<Tag>> GetAllTagsAsync(Requestor requestor);
+        Task<IEnumerable<Tag>> GetAllTagsAsync();
         Task<Tag?> GetTagByIdAsync(string id, Requestor requestor);
         Task<Tag> CreateTagAsync(CreateTagRequest request, Requestor requestor);
         Task<bool> DeleteTagAsync(string id, Requestor requestor);
@@ -47,9 +47,9 @@ namespace Expense.Tracker.Services.Abstractions.Interfaces
 
     public interface IAnalyticsService
     {
-        Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, Requestor requestor, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage);
-        Task<decimal> CalculateYearlyProjectionAsync(TransactionType type, Requestor requestor);
-        Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, Requestor requestor, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
+        Task<decimal> CalculateMonthlyAverageAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultMonthsBackForAverage);
+        Task<decimal> CalculateYearlyProjectionAsync(TransactionType type);
+        Task<decimal> CalculateTrendAnalysisAsync(TransactionType type, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
         Task<IEnumerable<MonthlySpending>> GetMonthlySpendingTrendsAsync(Requestor requestor, int monthsBack = AnalyticsConstants.DefaultTrendMonths);
         Task<IEnumerable<CategoryTrend>> GetCategoryTrendsAsync(Requestor requestor);
         Task<BudgetProjection> GenerateBudgetProjectionAsync(Requestor requestor);

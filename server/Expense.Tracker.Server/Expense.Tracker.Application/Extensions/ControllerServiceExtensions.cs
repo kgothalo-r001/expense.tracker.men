@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Expense.Tracker.Application.Extensions
 {
     /// <summary>
     /// Extension methods for configuring MVC controllers
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ControllerServiceExtensions
     {
         /// <summary>

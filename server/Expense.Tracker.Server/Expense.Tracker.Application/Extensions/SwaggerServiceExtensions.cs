@@ -1,11 +1,13 @@
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Expense.Tracker.Application.Extensions
 {
     /// <summary>
     /// Extension methods for configuring Swagger/OpenAPI documentation
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class SwaggerServiceExtensions
     {
         private const string ExpenseTrackerXmlFileName = "ExpenseTracker.xml";

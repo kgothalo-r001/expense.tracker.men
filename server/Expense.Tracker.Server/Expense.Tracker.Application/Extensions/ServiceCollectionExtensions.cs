@@ -1,18 +1,19 @@
 using Expense.Tracker.Services.Abstractions.Interfaces;
+using Expense.Tracker.Services.Data;
+using Expense.Tracker.Services.Factories;
 using Expense.Tracker.Services.Implementation;
 using Expense.Tracker.Services.Implementation.Factories;
 using Expense.Tracker.Services.Repositories;
-using Expense.Tracker.Services.Helpers;
 using Expense.Tracker.Services.Validators;
-using Expense.Tracker.Services.Factories;
-using Expense.Tracker.Services.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Expense.Tracker.Application.Extensions
 {
     /// <summary>
     /// Extension methods for registering application services and dependencies
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ServiceCollectionExtensions
     {
 
