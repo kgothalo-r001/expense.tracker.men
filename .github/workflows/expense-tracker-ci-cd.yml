@@ -1,0 +1,148 @@
+# 🚀 Expense Tracker CI/CD Pipeline
+# This workflow builds both frontend (Angular) and backend (.NET Core)
+# Runs on: Pull Requests and Push to main branch
+
+name: Expense Tracker CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+env:
+  # .NET Configuration
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  
+  # Node.js Configuration  
+  NODE_VERSION: '22.x'
+  
+  # Solution and Project Paths
+  SOLUTION_PATH: 'server/Expense.Tracker.Server/Expense.Tracker.Server.sln'
+  CLIENT_PATH: 'client/expense.tracker.main'
+  ABSTRACTIONS_PATH: 'client/abstractions'
+  BUSINESS_PATH: 'client/business'
+  
+  # Build Configuration
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  # 🏗️ Backend (.NET Core) Build and Test
+  backend:
+    name: 🏗️ Backend (.NET Core)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 📦 Cache NuGet Packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+          
+    - name: 🔄 Restore Dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+      
+    - name: 🏗️ Build Solution
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+    - name: 🧪 Run Unit Tests
+      run: dotnet test ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build
+
+    - name: 📦 Create Backend Artifact
+      if: success()
+      run: dotnet publish server/Expense.Tracker.Server/Expense.Tracker.Application/Expense.Tracker.Application.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --output ./backend-build --no-restore
+      
+    - name: 🚀 Upload Backend Artifact
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-build-${{ github.sha }}
+        path: ./backend-build/
+        retention-days: 30
+
+  # 🌐 Frontend (Angular) Build and Test  
+  frontend:
+    name: 🌐 Frontend (Angular)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: 📦 Cache Node Modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          client/*/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('client/**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: 📦 Install & Build Abstractions
+      working-directory: ${{ env.ABSTRACTIONS_PATH }}
+      run: |
+        npm install
+        npm run build
+
+    - name: 📦 Install & Build Business
+      working-directory: ${{ env.BUSINESS_PATH }}
+      run: |
+        npm install
+        npm run build
+      
+    - name: 📦 Install & Build Main Application
+      working-directory: ${{ env.CLIENT_PATH }}
+      run: |
+        npm install
+        npm run genClient
+        npm run build
+        
+    - name: 🚀 Upload Frontend Artifact
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build-${{ github.sha }}
+        path: ${{ env.CLIENT_PATH }}/dist/
+        retention-days: 30
+
+  # 🎯 Build Summary & Notifications
+  build-summary:
+    name: 📋 Build Summary
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: always()
+    
+    steps:
+    - name: 📊 Build Status Summary
+      run: |
+        echo "## 📋 Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Component | Status | Branch |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 🏗️ Backend (.NET) | ${{ needs.backend.result }} | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🌐 Frontend (Angular) | ${{ needs.frontend.result }} | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "**PR:** #${{ github.event.number }} - ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
+        fi
