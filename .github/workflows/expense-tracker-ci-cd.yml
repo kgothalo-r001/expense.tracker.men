@@ -57,7 +57,10 @@ jobs:
       
     - name: 🏗️ Build Solution
       run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
-        
+
+    - name: 🧪 Run Unit Tests
+      run: dotnet test ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --logger
+
     - name: 📦 Create Backend Artifact
       if: success()
       run: dotnet publish server/Expense.Tracker.Server/Expense.Tracker.Application/Expense.Tracker.Application.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --output ./backend-build --no-restore
