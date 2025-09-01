@@ -4,6 +4,7 @@ using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Constants;
 using Microsoft.Extensions.Logging;
+using Expense.Tracker.Peer.Helpers;
 
 namespace Expense.Tracker.Peer.Controllers
 {
@@ -11,11 +12,13 @@ namespace Expense.Tracker.Peer.Controllers
     public class TransactionsController : ExpenseManagerBaseController
     {
         private readonly ITransactionService _transactionService;
+        private readonly ITelemetryHelper _telemetryHelper;
 
-        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger) 
+        public TransactionsController(ITransactionService transactionService, ILogger<TransactionsController> logger, ITelemetryHelper telemetryHelper) 
             : base(logger)
         {
             _transactionService = transactionService;
+            _telemetryHelper = telemetryHelper;
         }
 
         /// <summary>
@@ -48,7 +51,20 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving transactions for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["CategoryId"] = categoryId ?? "null",
+                    ["StartDate"] = startDate?.ToString("O") ?? "null",
+                    ["EndDate"] = endDate?.ToString("O") ?? "null"
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetTransactions",
+                    "TransactionsController.GetTransactions",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving transactions");
             }
         }
@@ -97,7 +113,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating transaction for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "CreateTransaction",
+                    "TransactionsController.CreateTransaction",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while creating the transaction");
             }
         }

@@ -1,13 +1,14 @@
-using Xunit;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using FluentAssertions;
 using Expense.Tracker.Peer.Controllers;
+using Expense.Tracker.Peer.Helpers;
+using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Tests.Helpers;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace Expense.Tracker.Tests.Controllers;
 
@@ -16,12 +17,15 @@ public class CategoriesControllerTests : BaseTestHelper
     private readonly CategoriesController _controller;
     private readonly Mock<ICategoryService> _mockCategoryService;
     private readonly Mock<ILogger<CategoriesController>> _mockLogger;
+    private readonly Mock<ITelemetryHelper> _mockTelemetryHelper;
 
     public CategoriesControllerTests()
     {
         _mockCategoryService = new Mock<ICategoryService>();
         _mockLogger = new Mock<ILogger<CategoriesController>>();
-        _controller = new CategoriesController(_mockCategoryService.Object, _mockLogger.Object);
+        _mockTelemetryHelper = new Mock<ITelemetryHelper>();
+        
+        _controller = new CategoriesController(_mockCategoryService.Object, _mockLogger.Object, _mockTelemetryHelper.Object);
     }
 
     [Fact]

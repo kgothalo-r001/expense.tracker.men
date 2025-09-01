@@ -1,12 +1,13 @@
-using Xunit;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using FluentAssertions;
 using Expense.Tracker.Peer.Controllers;
+using Expense.Tracker.Peer.Helpers;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Tests.Helpers;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace Expense.Tracker.Tests.Controllers;
 
@@ -15,12 +16,15 @@ public class DashboardControllerTests : BaseTestHelper
     private readonly DashboardController _controller;
     private readonly Mock<IDashboardService> _mockDashboardService;
     private readonly Mock<ILogger<DashboardController>> _mockLogger;
+    private readonly Mock<ITelemetryHelper> _mockTelemetryHelper;
 
     public DashboardControllerTests()
     {
         _mockDashboardService = new Mock<IDashboardService>();
         _mockLogger = new Mock<ILogger<DashboardController>>();
-        _controller = new DashboardController(_mockDashboardService.Object, _mockLogger.Object);
+        _mockTelemetryHelper = new Mock<ITelemetryHelper>();
+        
+        _controller = new DashboardController(_mockDashboardService.Object, _mockLogger.Object, _mockTelemetryHelper.Object);
     }
 
     [Fact]

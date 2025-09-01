@@ -4,6 +4,7 @@ using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Constants;
 using Microsoft.Extensions.Logging;
+using Expense.Tracker.Peer.Helpers;
 
 namespace Expense.Tracker.Peer.Controllers
 {
@@ -11,11 +12,13 @@ namespace Expense.Tracker.Peer.Controllers
     public class AnalyticsController : ExpenseManagerBaseController
     {
         private readonly IAnalyticsService _analyticsService;
+        private readonly ITelemetryHelper _telemetryHelper;
 
-        public AnalyticsController(IAnalyticsService analyticsService, ILogger<AnalyticsController> logger)
+        public AnalyticsController(IAnalyticsService analyticsService, ILogger<AnalyticsController> logger, ITelemetryHelper telemetryHelper)
             : base(logger)
         {
             _analyticsService = analyticsService;
+            _telemetryHelper = telemetryHelper;
         }
 
         /// <summary>
@@ -31,7 +34,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving monthly spending trends for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["MonthsBack"] = monthsBack.ToString()
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetMonthlySpendingTrends",
+                    "AnalyticsController.GetMonthlySpendingTrends",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving monthly spending trends");
             }
         }
@@ -49,7 +63,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving category trends for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetCategoryTrends",
+                    "AnalyticsController.GetCategoryTrends",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while retrieving category trends");
             }
         }
@@ -67,7 +86,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving budget projection for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetBudgetProjection",
+                    "AnalyticsController.GetBudgetProjection",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while retrieving budget projection");
             }
         }
@@ -87,7 +111,19 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating monthly average for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["TransactionType"] = type.ToString(),
+                    ["MonthsBack"] = monthsBack.ToString()
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetMonthlyAverage",
+                    "AnalyticsController.GetMonthlyAverage",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while calculating monthly average");
             }
         }
@@ -105,7 +141,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating yearly projection for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["TransactionType"] = type.ToString()
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetYearlyProjection",
+                    "AnalyticsController.GetYearlyProjection",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while calculating yearly projection");
             }
         }

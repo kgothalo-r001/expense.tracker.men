@@ -4,6 +4,7 @@ using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Constants;
 using Microsoft.Extensions.Logging;
+using Expense.Tracker.Peer.Helpers;
 
 namespace Expense.Tracker.Peer.Controllers
 {
@@ -11,11 +12,13 @@ namespace Expense.Tracker.Peer.Controllers
     public class TagsController : ExpenseManagerBaseController
     {
         private readonly ITagService _tagService;
+        private readonly ITelemetryHelper _telemetryHelper;
 
-        public TagsController(ITagService tagService, ILogger<TagsController> logger)
+        public TagsController(ITagService tagService, ILogger<TagsController> logger, ITelemetryHelper telemetryHelper)
             : base(logger)
         {
             _tagService = tagService;
+            _telemetryHelper = telemetryHelper;
         }
 
         /// <summary>
@@ -31,7 +34,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving tags for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetTags",
+                    "TagsController.GetTags",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while retrieving tags");
             }
         }
@@ -53,7 +61,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving tag {TagId} for user {UserId}", id, Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["TagId"] = id
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetTag",
+                    "TagsController.GetTag",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving the tag");
             }
         }
@@ -80,7 +99,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating tag for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "CreateTag",
+                    "TagsController.CreateTag",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while creating the tag");
             }
         }
@@ -103,7 +127,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting tag {TagId} for user {UserId}", id, Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["TagId"] = id
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "DeleteTag",
+                    "TagsController.DeleteTag",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while deleting the tag");
             }
         }
@@ -121,7 +156,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving popular tags for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["Limit"] = limit.ToString()
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetPopularTags",
+                    "TagsController.GetPopularTags",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving popular tags");
             }
         }

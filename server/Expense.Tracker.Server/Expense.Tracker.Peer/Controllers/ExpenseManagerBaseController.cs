@@ -12,7 +12,7 @@ namespace Expense.Tracker.Peer.Controllers
     public abstract class ExpenseManagerBaseController : ControllerBase, IActionFilter
     {
         protected readonly ILogger _logger;
-        protected Requestor Requestor { get; private set; }
+        protected Requestor Requestor { get; private set; } = null!;
 
         protected ExpenseManagerBaseController(ILogger logger)
         {

@@ -1,13 +1,14 @@
-using Xunit;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using FluentAssertions;
 using Expense.Tracker.Peer.Controllers;
+using Expense.Tracker.Peer.Helpers;
+using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Tests.Helpers;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace Expense.Tracker.Tests.Controllers;
 
@@ -16,12 +17,15 @@ public class TransactionsControllerTests : BaseTestHelper
     private readonly TransactionsController _controller;
     private readonly Mock<ITransactionService> _mockTransactionService;
     private readonly Mock<ILogger<TransactionsController>> _mockLogger;
+    private readonly Mock<ITelemetryHelper> _mockTelemetryHelper;
 
     public TransactionsControllerTests()
     {
         _mockTransactionService = new Mock<ITransactionService>();
         _mockLogger = new Mock<ILogger<TransactionsController>>();
-        _controller = new TransactionsController(_mockTransactionService.Object, _mockLogger.Object);
+        _mockTelemetryHelper = new Mock<ITelemetryHelper>();
+        
+        _controller = new TransactionsController(_mockTransactionService.Object, _mockLogger.Object, _mockTelemetryHelper.Object);
     }
 
     [Fact]

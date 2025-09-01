@@ -14,6 +14,7 @@ builder.Services.AddExpenseTrackerControllers();
 builder.Services.AddExpenseTrackerSwagger();
 builder.Services.AddExpenseTrackerCors();
 builder.Services.AddExpenseTrackerHealthChecks();
+builder.Services.AddExpenseTrackerApplicationInsights(builder.Configuration);
 
 var app = builder.Build();
 

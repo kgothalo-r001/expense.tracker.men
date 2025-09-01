@@ -1,3 +1,4 @@
+using Expense.Tracker.Peer.Helpers;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Data;
 using Expense.Tracker.Services.Factories;
@@ -100,6 +101,7 @@ namespace Expense.Tracker.Application.Extensions
         private static void RegisterUtilityServices(IServiceCollection services)
         {
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ITelemetryHelper, TelemetryHelper>();
         }
 
         /// <summary>

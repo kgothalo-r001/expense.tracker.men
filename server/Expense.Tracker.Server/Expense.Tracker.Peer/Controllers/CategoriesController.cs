@@ -4,6 +4,9 @@ using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Constants;
 using Microsoft.Extensions.Logging;
+using Expense.Tracker.Peer.Helpers;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 
 namespace Expense.Tracker.Peer.Controllers
 {
@@ -11,11 +14,13 @@ namespace Expense.Tracker.Peer.Controllers
     public class CategoriesController : ExpenseManagerBaseController
     {
         private readonly ICategoryService _categoryService;
+        private readonly ITelemetryHelper _telemetryHelper;
 
-        public CategoriesController(ICategoryService categoryService, ILogger<CategoriesController> logger) 
+        public CategoriesController(ICategoryService categoryService, ILogger<CategoriesController> logger, ITelemetryHelper telemetryHelper) 
             : base(logger)
         {
             _categoryService = categoryService;
+            _telemetryHelper = telemetryHelper;
         }
 
         /// <summary>
@@ -31,7 +36,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving categories for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetCategories",
+                    "CategoriesController.GetCategories",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while retrieving categories");
             }
         }
@@ -53,7 +63,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving category {CategoryId} for user {UserId}", id, Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["CategoryId"] = id
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetCategory",
+                    "CategoriesController.GetCategory",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving the category");
             }
         }
@@ -80,7 +101,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating category for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "CreateCategory",
+                    "CategoriesController.CreateCategory",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while creating the category");
             }
         }
@@ -117,7 +143,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating category {CategoryId} for user {UserId}", id, Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["CategoryId"] = id
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "UpdateCategory",
+                    "CategoriesController.UpdateCategory",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while updating the category");
             }
         }
@@ -144,7 +181,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting category {CategoryId} for user {UserId}", id, Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["CategoryId"] = id
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "DeleteCategory",
+                    "CategoriesController.DeleteCategory",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while deleting the category");
             }
         }
@@ -162,7 +210,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error initializing default categories for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "InitializeDefaultCategories",
+                    "CategoriesController.InitializeDefaultCategories",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while initializing default categories");
             }
         }

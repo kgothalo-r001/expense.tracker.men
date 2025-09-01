@@ -4,6 +4,7 @@ using Expense.Tracker.Services.Abstractions.Models;
 using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Constants;
 using Microsoft.Extensions.Logging;
+using Expense.Tracker.Peer.Helpers;
 
 namespace Expense.Tracker.Peer.Controllers
 {
@@ -11,11 +12,13 @@ namespace Expense.Tracker.Peer.Controllers
     public class DashboardController : ExpenseManagerBaseController
     {
         private readonly IDashboardService _dashboardService;
+        private readonly ITelemetryHelper _telemetryHelper;
 
-        public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
+        public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger, ITelemetryHelper telemetryHelper)
             : base(logger)
         {
             _dashboardService = dashboardService;
+            _telemetryHelper = telemetryHelper;
         }
 
         /// <summary>
@@ -33,7 +36,19 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving dashboard summary for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["StartDate"] = startDate?.ToString("O") ?? "null",
+                    ["EndDate"] = endDate?.ToString("O") ?? "null"
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetDashboardSummary",
+                    "DashboardController.GetDashboardSummary",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving dashboard summary");
             }
         }
@@ -51,7 +66,18 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving expense analytics for user {UserId}", Requestor.UserId);
+                var additionalProperties = new Dictionary<string, string>
+                {
+                    ["MonthsBack"] = monthsBack.ToString()
+                };
+
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetExpenseAnalytics",
+                    "DashboardController.GetExpenseAnalytics",
+                    Requestor,
+                    additionalProperties);
+
                 return StatusCode(500, "An error occurred while retrieving expense analytics");
             }
         }
@@ -69,7 +95,12 @@ namespace Expense.Tracker.Peer.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving budget projection for user {UserId}", Requestor.UserId);
+                _telemetryHelper.LogErrorWithTelemetry(
+                    ex,
+                    "GetBudgetProjection",
+                    "DashboardController.GetBudgetProjection",
+                    Requestor);
+
                 return StatusCode(500, "An error occurred while retrieving budget projection");
             }
         }

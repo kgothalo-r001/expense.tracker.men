@@ -1,13 +1,14 @@
-using Xunit;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using FluentAssertions;
 using Expense.Tracker.Peer.Controllers;
+using Expense.Tracker.Peer.Helpers;
+using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Services.Abstractions.Interfaces;
 using Expense.Tracker.Services.Abstractions.Models;
-using Expense.Tracker.Services.Abstractions.Enums;
 using Expense.Tracker.Tests.Helpers;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 
 namespace Expense.Tracker.Tests.Controllers;
 
@@ -16,12 +17,15 @@ public class AnalyticsControllerTests : BaseTestHelper
     private readonly AnalyticsController _controller;
     private readonly Mock<IAnalyticsService> _mockAnalyticsService;
     private readonly Mock<ILogger<AnalyticsController>> _mockLogger;
+    private readonly Mock<ITelemetryHelper> _mockTelemetryHelper;
 
     public AnalyticsControllerTests()
     {
         _mockAnalyticsService = new Mock<IAnalyticsService>();
         _mockLogger = new Mock<ILogger<AnalyticsController>>();
-        _controller = new AnalyticsController(_mockAnalyticsService.Object, _mockLogger.Object);
+        _mockTelemetryHelper = new Mock<ITelemetryHelper>();
+        
+        _controller = new AnalyticsController(_mockAnalyticsService.Object, _mockLogger.Object, _mockTelemetryHelper.Object);
     }
 
     [Fact]
