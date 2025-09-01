@@ -30,6 +30,25 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(request.UsernameOrEmail))
+            {
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Username or email is required"
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Password is required"
+                };
+            }
+
             var user = await _userRepository.GetUserByUsernameOrEmailAsync(request.UsernameOrEmail);
 
             if (user == null)
@@ -38,6 +57,15 @@ public class AuthenticationService : IAuthenticationService
                 {
                     Success = false,
                     ErrorMessage = "Invalid username/email or password"
+                };
+            }
+
+            if (!user.IsActive)
+            {
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Account is inactive"
                 };
             }
 
@@ -84,19 +112,42 @@ public class AuthenticationService : IAuthenticationService
         
         try
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(request.Username))
+            {
+                result.ValidationErrors.Add("Username is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                result.ValidationErrors.Add("Email is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                result.ValidationErrors.Add("Password is required.");
+            }
+
+            // Validate password confirmation
+            if (request.Password != request.ConfirmPassword)
+            {
+                result.ValidationErrors.Add("Passwords do not match.");
+            }
+
             // Validate email format
-            if (!await _userValidationService.IsEmailValid(request.Email))
+            if (!string.IsNullOrWhiteSpace(request.Email) && !await _userValidationService.IsEmailValid(request.Email))
             {
                 result.ValidationErrors.Add("Invalid email address.");
             }
+
             // Validate username availability using validation service
-            if (!await _userValidationService.IsUsernameAvailableAsync(request.Username))
+            if (!string.IsNullOrWhiteSpace(request.Username) && !await _userValidationService.IsUsernameAvailableAsync(request.Username))
             {
                 result.ValidationErrors.Add("Username is already taken");
             }
 
             // Validate email availability using validation service
-            if (!await _userValidationService.IsEmailAvailableAsync(request.Email))
+            if (!string.IsNullOrWhiteSpace(request.Email) && !await _userValidationService.IsEmailAvailableAsync(request.Email))
             {
                 result.ValidationErrors.Add("Email is already registered");
             }

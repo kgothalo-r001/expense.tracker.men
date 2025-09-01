@@ -1,7 +1,5 @@
 using Expense.Tracker.Application.Extensions;
 using Expense.Tracker.Application.Middleware;
-using Expense.Tracker.Services.Abstractions.Enums;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 

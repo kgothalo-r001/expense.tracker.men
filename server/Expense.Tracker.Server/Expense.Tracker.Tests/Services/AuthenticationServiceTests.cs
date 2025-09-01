@@ -32,31 +32,33 @@ public class AuthenticationServiceTests
             _mockLogger.Object);
     }
 
-    //[Fact]
-    //public async Task RegisterAsync_WithValidRequest_ReturnsAuthResponse()
-    //{
-    //    var request = new RegisterRequest
-    //    {
-    //        Username = "newuser",
-    //        Email = "newuser@example.com",
-    //        Password = "TestPassword123!",
-    //        ConfirmPassword = "TestPassword123!"
-    //    };
-    //    _mockUserValidationService.Setup(s => s.IsUsernameAvailableAsync(request.Username)).ReturnsAsync(true);
-    //    _mockUserValidationService.Setup(s => s.IsEmailAvailableAsync(request.Email)).ReturnsAsync(true);
-    //    _mockUserValidationService.Setup(s => s.HashPassword(request.Password)).Returns("hashed");
-    //    var user = new User { Id = Guid.NewGuid(), Username = request.Username, Email = request.Email, PasswordHash = "hashed", IsActive = true };
-    //    _mockUserRepo.Setup(s => s.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(user);
-    //    _mockTokenService.Setup(s => s.GenerateJwtToken(user.Id, user.Username, user.Email, It.IsAny<string>())).Returns("token123");
-    //    _mockSessionService.Setup(s => s.CreateSessionAsync(user.Id, "token123")).ReturnsAsync(new UserSession { Id = Guid.NewGuid(), UserId = user.Id, Token = "token123" });
+    [Fact]
+    public async Task RegisterAsync_WithValidRequest_ReturnsAuthResponse()
+    {
+        var request = new RegisterRequest
+        {
+            Username = "newuser",
+            Email = "newuser@example.com",
+            Password = "TestPassword123!",
+            ConfirmPassword = "TestPassword123!"
+        };
+        _mockUserValidationService.Setup(s => s.IsUsernameAvailableAsync(request.Username)).ReturnsAsync(true);
+        _mockUserValidationService.Setup(s => s.IsEmailAvailableAsync(request.Email)).ReturnsAsync(true);
+        _mockUserValidationService.Setup(s => s.IsEmailValid(request.Email)).ReturnsAsync(true);
+        _mockUserValidationService.Setup(s => s.HashPassword(request.Password)).Returns("hashed");
+        var user = new User { Id = Guid.NewGuid(), Username = request.Username, Email = request.Email, PasswordHash = "hashed", IsActive = true };
+        _mockUserRepo.Setup(s => s.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(user);
+        _mockTokenService.Setup(s => s.GenerateJwtToken(user.Id, user.Username, user.Email)).Returns("token123");
+        _mockSessionService.Setup(s => s.CreateSessionAsync(user.Id, "token123")).ReturnsAsync(new UserSession { Id = Guid.NewGuid(), UserId = user.Id, Token = "token123" });
 
-    //    var result = await _authService.RegisterAsync(request);
-    //    result.Should().NotBeNull();
-    //    result.User.Should().NotBeNull();
-    //    result.User.Username.Should().Be(request.Username);
-    //    result.User.Email.Should().Be(request.Email);
-    //    result.User.IsActive.Should().BeTrue();
-    //}
+        var result = await _authService.RegisterAsync(request);
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.User.Should().NotBeNull();
+        result.User!.Username.Should().Be(request.Username);
+        result.User!.Email.Should().Be(request.Email);
+        result.User!.IsActive.Should().BeTrue();
+    }
 
     [Fact]
     public async Task RegisterAsync_WithMismatchedPasswords_ReturnsValidationError()
@@ -174,7 +176,7 @@ public class AuthenticationServiceTests
         result.Should().NotBeNull();
         result.Token.Should().Be("token456");
         result.User.Should().NotBeNull();
-        result.User.Username.Should().Be(request.UsernameOrEmail);
+        result.User!.Username.Should().Be(request.UsernameOrEmail);
     }
 
     [Fact]
@@ -223,6 +225,7 @@ public class AuthenticationServiceTests
 
         var result = await _authService.LoginAsync(request);
         result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Account is inactive");
     }
 
     [Fact]
@@ -236,6 +239,7 @@ public class AuthenticationServiceTests
 
         var result = await _authService.LoginAsync(request);
         result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Username or email is required");
     }
 
     [Fact]
@@ -249,6 +253,7 @@ public class AuthenticationServiceTests
 
         var result = await _authService.LoginAsync(request);
         result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Be("Password is required");
     }
 
     [Fact]
@@ -265,7 +270,7 @@ public class AuthenticationServiceTests
         result.Should().NotBeNull();
         result.Token.Should().Be("newtoken");
         result.User.Should().NotBeNull();
-        result.User.Username.Should().Be("testuser");
+        result.User!.Username.Should().Be("testuser");
     }
 
     [Fact]
