@@ -12,6 +12,10 @@ export const loadTransactionsFailure = createAction(
   props<{ error: string }>()
 );
 
+export const loadTransactionsSkipped = createAction(
+  '[Transaction] Load Transactions Skipped - Already Loaded'
+);
+
 // Create Transaction Actions
 export const addTransaction = createAction(
   '[Transaction] Add Transaction',

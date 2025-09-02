@@ -12,4 +12,11 @@ export * from './category/category.effects';
 export * from './category/category.selectors';
 export * as CategoryActions from './category/category.actions';
 
+export * from './dashboard/dashboard.actions';
+export { dashboardReducer } from './dashboard/dashboard.reducer';
+export type { DashboardState } from './dashboard/dashboard.reducer';
+export * from './dashboard/dashboard.effects';
+export * from './dashboard/dashboard.selectors';
+export * as DashboardActions from './dashboard/dashboard.actions';
+
 export * from './app.state';

@@ -35,6 +35,12 @@ export const transactionReducer = createReducer(
     error
   })),
 
+  on(TransactionActions.loadTransactionsSkipped, (state) => ({
+    ...state,
+    loading: false,
+    error: null
+  })),
+
   // Add Transaction
   on(TransactionActions.addTransaction, (state) => ({
     ...state,

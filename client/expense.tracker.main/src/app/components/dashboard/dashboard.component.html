@@ -57,6 +57,7 @@
       <!-- Category Distribution Chart -->
       <div class="chart-wrapper">
         <app-category-trends 
+          [data]="categoryTrends$ | async"
           [chartType]="'doughnut'"
           height="350px">
         </app-category-trends>

@@ -14,6 +14,10 @@ export const loadCategoriesFailure = createAction(
   props<{ error: string }>()
 );
 
+export const loadCategoriesSkipped = createAction(
+  '[Category] Load Categories Skipped - Already Loaded'
+);
+
 // Add category
 export const addCategory = createAction(
   '[Category] Add Category',

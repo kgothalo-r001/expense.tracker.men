@@ -1,10 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest, map } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { Transaction, TransactionType, TransactionType2 } from '../../../../auto/autoexpensetrackerclient';
-import { TransactionActions, selectAllTransactions, selectTransactionLoading, selectTransactionError, AppState } from '../../../../../business';
+import { Transaction, TransactionType, TransactionType2, Category } from '../../../../auto/autoexpensetrackerclient';
+import { 
+  TransactionActions, 
+  CategoryActions,
+  selectAllTransactions, 
+  selectTransactionLoading, 
+  selectTransactionError, 
+  selectFilteredTransactions,
+  selectAllCategories,
+  AppState 
+} from '../../../../../business';
 import { TransactionModalComponent } from './transaction-modal.component';
 import { DeleteConfirmationModalComponent } from '../delete-confirmation-modal';
 
@@ -19,6 +28,7 @@ export class TransactionListComponent implements OnInit {
   transactions$: Observable<Transaction[]>;
   isLoading$: Observable<boolean>;
   error$: Observable<string | null>;
+  categories$: Observable<Category[]>;
 
   // Filter properties
   selectedType: TransactionType | 'ALL' = 'ALL';
@@ -37,13 +47,28 @@ export class TransactionListComponent implements OnInit {
   transactionTypes = Object.values(TransactionType);
 
   constructor(private store: Store<AppState>) {
-    this.transactions$ = this.store.select(selectAllTransactions);
     this.isLoading$ = this.store.select(selectTransactionLoading);
     this.error$ = this.store.select(selectTransactionError);
+    this.categories$ = this.store.select(selectAllCategories);
+    
+    this.transactions$ = this.store.select(selectAllTransactions);
+  }
+
+  private updateFilteredTransactions(): void {
+    const filters = {
+      type: this.selectedType,
+      categoryId: this.selectedCategoryId || undefined,
+      startDate: this.startDate ? new Date(this.startDate) : undefined,
+      endDate: this.endDate ? new Date(this.endDate) : undefined,
+      searchTerm: this.searchTerm.trim() || undefined
+    };
+
+    this.transactions$ = this.store.select(selectFilteredTransactions(filters));
   }
 
   ngOnInit(): void {
     this.store.dispatch(TransactionActions.loadTransactions());
+    this.store.dispatch(CategoryActions.loadCategories());
   }
 
   loadTransactions(): void {
@@ -51,7 +76,7 @@ export class TransactionListComponent implements OnInit {
   }
 
   onFilterChange(): void {
-    this.loadTransactions();
+    this.updateFilteredTransactions();
   }
 
   onDeleteTransaction(id: string): void {
@@ -87,8 +112,6 @@ export class TransactionListComponent implements OnInit {
   }
 
   onTransactionSaved(transaction: Transaction): void {
-    // Transaction form component already dispatches the action to the store
-    // Just close the modal and reset state
     this.showTransactionModal = false;
     this.selectedTransaction = null;
     this.isEditMode = false;
@@ -106,7 +129,8 @@ export class TransactionListComponent implements OnInit {
     this.startDate = '';
     this.endDate = '';
     this.searchTerm = '';
-    this.store.dispatch(TransactionActions.loadTransactions());
+    // Update filtered transactions to show all transactions
+    this.updateFilteredTransactions();
   }
 
   trackByTransactionId(index: number, transaction: Transaction): string {

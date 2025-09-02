@@ -25,6 +25,21 @@
       </div>
 
       <div class="filter-group">
+        <label for="category-filter">Category:</label>
+        <select 
+          id="category-filter"
+          [(ngModel)]="selectedCategoryId" 
+          (change)="onFilterChange()"
+          class="form-select"
+        >
+          <option value="">All Categories</option>
+          <option *ngFor="let category of categories$ | async" [value]="category.id">
+            {{ category.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
         <label for="start-date">From:</label>
         <input 
           id="start-date"

@@ -1,9 +1,9 @@
-import { Component, OnInit, AfterViewInit, Input, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, Input, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Chart, ChartConfiguration, ChartType, registerables, TooltipItem } from 'chart.js';
-import { Client } from '../../../../../auto/autoexpensetrackerclient';
+import { CategoryTrend } from '../../../../../auto/autoexpensetrackerclient';
 import { CategoryService } from '../../../../../../business';
-import { Subject, takeUntil, forkJoin } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -21,9 +21,10 @@ export interface CategoryTrendData {
   templateUrl: './category-trends.component.html',
   styleUrls: ['./category-trends.component.less']
 })
-export class CategoryTrendsComponent implements OnInit, AfterViewInit, OnDestroy {
+export class CategoryTrendsComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @Input() chartType: 'pie' | 'doughnut' = 'doughnut';
   @Input() height: string = '400px';
+  @Input() data: CategoryTrend[] | null = null;
   @ViewChild('chartCanvas', { static: false }) chartCanvas!: ElementRef<HTMLCanvasElement>;
 
   private chart: Chart | null = null;
@@ -35,13 +36,20 @@ export class CategoryTrendsComponent implements OnInit, AfterViewInit, OnDestroy
   categoryData: CategoryTrendData[] = [];
 
   constructor(
-    private client: Client,
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    this.loadChartData();
+    if (this.data) {
+      this.loadChartData();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['data'] && changes['data'].currentValue) {
+      this.loadChartData();
+    }
   }
 
   ngAfterViewInit() {
@@ -54,17 +62,21 @@ export class CategoryTrendsComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private loadChartData() {
+    if (!this.data || this.data.length === 0) {
+      this.isLoading = false;
+      this.hasError = true;
+      this.errorMessage = 'No category trends data available';
+      return;
+    }
+
     this.isLoading = true;
     this.hasError = false;
     
-    forkJoin({
-      categories: this.categoryService.getCategories(),
-      trends: this.client.getCategoryTrends()
-    })
+    this.categoryService.getCategories()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ categories, trends }) => {
-          this.processData(trends, categories);
+        next: (categories) => {
+          this.processData(this.data!, categories);
           this.isLoading = false;
           this.cdr.detectChanges();
           setTimeout(() => {
@@ -74,37 +86,58 @@ export class CategoryTrendsComponent implements OnInit, AfterViewInit, OnDestroy
           }, 0);
         },
         error: (error: any) => {
-          console.error('Failed to load category trends:', error);
+          console.error('Failed to load categories:', error);
           this.hasError = true;
-          this.errorMessage = 'Failed to load category trends data';
+          this.errorMessage = 'Failed to load categories data';
           this.isLoading = false;
         }
       });
   }
 
-  private processData(data: any[], categories: any[]) {
-    const filteredData = data.filter(item => (item.currentMonthAmount || 0) > 0);
-    const totalAmount = filteredData.reduce((sum, item) => sum + (item.currentMonthAmount || 0), 0);
+  private processData(data: CategoryTrend[], categories: any[]) {
+    const filteredData = data.filter(item => 
+      (item.currentMonthAmount || 0) > 0 || (item.previousMonthAmount || 0) > 0
+    );
+    
+    const hasCurrentMonthData = filteredData.some(item => (item.currentMonthAmount || 0) > 0);
+    const useCurrentMonth = hasCurrentMonthData;
+    
+    const totalAmount = filteredData.reduce((sum, item) => {
+      const amount = useCurrentMonth ? (item.currentMonthAmount || 0) : (item.previousMonthAmount || 0);
+      return sum + amount;
+    }, 0);
     
     const categoryColorMap = new Map<string, string>();
     categories.forEach(cat => {
       categoryColorMap.set(cat.name, cat.color);
     });
     
-    this.categoryData = filteredData.map((item, index) => ({
-      category: item.categoryName || 'Unknown',
-      amount: item.currentMonthAmount || 0,
-      percentage: totalAmount > 0 ? ((item.currentMonthAmount || 0) / totalAmount) * 100 : 0,
-      color: categoryColorMap.get(item.categoryName) || '#3b82f6'
-    }));
+    this.categoryData = filteredData.map((item, index) => {
+      const amount = useCurrentMonth ? (item.currentMonthAmount || 0) : (item.previousMonthAmount || 0);
+      return {
+        category: item.categoryName || 'Unknown',
+        amount: amount,
+        percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0,
+        color: categoryColorMap.get(item.categoryName || '') || this.getDefaultColor(index)
+      };
+    }).filter(item => item.amount > 0);
+  }
+  
+  private getDefaultColor(index: number): string {
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+    return colors[index % colors.length];
   }
 
   private createChart() {
     this.destroyChart();
 
-    // Check if ViewChild is available
     if (!this.chartCanvas?.nativeElement) {
-      console.warn('Chart canvas not available yet');
+      return;
+    }
+    
+    if (!this.categoryData || this.categoryData.length === 0) {
+      this.hasError = true;
+      this.errorMessage = 'No category data available to display';
       return;
     }
 

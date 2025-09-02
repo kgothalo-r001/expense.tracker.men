@@ -32,6 +32,12 @@ export const categoryReducer = createReducer(
     error
   })),
 
+  on(CategoryActions.loadCategoriesSkipped, (state) => ({
+    ...state,
+    loading: false,
+    error: null
+  })),
+
   // Add Category
   on(CategoryActions.addCategory, state => ({
     ...state,

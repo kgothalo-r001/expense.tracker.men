@@ -5,7 +5,16 @@ import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { Client, IClient, API_BASE_URL } from '../../auto/autoexpensetrackerclient';
-import { transactionReducer, TransactionEffects, categoryReducer, CategoryEffects, AuthInterceptor, API_CLIENT as BUSINESS_API_CLIENT } from '../../../business';
+import { 
+  transactionReducer, 
+  TransactionEffects, 
+  categoryReducer, 
+  CategoryEffects,
+  dashboardReducer,
+  DashboardEffects,
+  AuthInterceptor, 
+  API_CLIENT as BUSINESS_API_CLIENT 
+} from '../../../business';
 import { routes } from './app.routes';
 
 export const API_CLIENT = new InjectionToken<IClient>('API_CLIENT');
@@ -17,9 +26,10 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi()),
     provideStore({
       transactions: transactionReducer,
-      categories: categoryReducer
+      categories: categoryReducer,
+      dashboard: dashboardReducer
     }),
-    provideEffects([TransactionEffects, CategoryEffects]),
+    provideEffects([TransactionEffects, CategoryEffects, DashboardEffects]),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: false,
