@@ -1,6 +1,6 @@
 # Build stage
 FROM node:20-alpine AS build
-WORKDIR /client
+WORKDIR /app
 
 # Install curl for health checks
 RUN apk add --no-cache curl
@@ -11,17 +11,17 @@ COPY . .
 # Install & Build Abstractions
 RUN if [ -d "abstractions" ]; then \
     echo "Building abstractions..."; \
-  cd "abstractions" && \
-  npm install && \
-    npm run build; \
+    cd abstractions && \
+    npm install && \
+    npm run build && \
     echo "Abstractions built successfully"; \
   fi
 
 # Install Business dependencies first
 RUN if [ -d "business" ]; then \
     echo "Installing business dependencies..."; \
-  cd "business" && \
-  npm install; \
+    cd business && \
+    npm install; \
   fi
 
 # Create auto-generated directories to prevent build failures
@@ -32,22 +32,22 @@ RUN if [ -d "business" ]; then \
 
 # Build Business (with fallback client)
 RUN if [ -d "business" ]; then \
-    echo "Building business layer..."; \
-    cd "business" && \
+  echo "Building business layer..."; \
+  cd business && \
     (npm run genClient && echo "Client generated successfully") || \
     (echo "Client generation failed, using fallback" && \
      cp fallback-client.ts auto/autobusinessclient/index.ts) && \
-    npm run build; \
+    npm run build && \
     echo "Business layer built successfully"; \
   fi  
 
 # Install & Build Main Application
 RUN if [ -d "expense.tracker.main" ]; then \
     echo "Building main application..."; \
-  cd "expense.tracker.main" && \
-  npm install && \
-    (npm run genClient && echo "Client generated successfully") || echo "Client generation failed, continuing..." && \
-    npm run build -- --configuration production; \
+    cd expense.tracker.main && \
+    npm install && \
+    npm run genClient && \
+    npm run build -- --configuration production && \
     echo "Main application built successfully"; \
   fi
 
@@ -58,10 +58,11 @@ FROM nginx:alpine AS production
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application
-COPY --from=build /client/expense.tracker.main/dist/expense.tracker.main/* /usr/share/nginx/html/
+  # Copy built application
+  COPY --from=build /app/expense.tracker.main/dist/expense.tracker.main/ /usr/share/nginx/html/
 
 # Expose port
 EXPOSE 80
 
 # Start nginx
-CMD ["nginx", "-g", "daemon off;"]  
+CMD ["nginx", "-g", "daemon off;"]
