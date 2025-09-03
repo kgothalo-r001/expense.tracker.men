@@ -146,3 +146,103 @@ jobs:
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           echo "**PR:** #${{ github.event.number }} - ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
         fi
+
+  # 🐳 Docker Build and Push to GitHub Container Registry
+  docker:
+    name: 🐳 Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: success() && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔐 Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 📊 Extract Metadata for Backend
+      id: meta-backend
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}/expense-tracker-backend
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: 📊 Extract Metadata for Frontend  
+      id: meta-frontend
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}/expense-tracker-frontend
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: 🔧 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🐳 Build and Push Backend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./server/Expense.Tracker.Server
+        file: ./server/Expense.Tracker.Server/Dockerfile
+        push: true
+        tags: ${{ steps.meta-backend.outputs.tags }}
+        labels: ${{ steps.meta-backend.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: 🐳 Build and Push Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./client
+        file: ./client/Dockerfile
+        push: true
+        tags: ${{ steps.meta-frontend.outputs.tags }}
+        labels: ${{ steps.meta-frontend.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # 📋 Final Summary with Docker Images
+  final-summary:
+    name: 📋 Final Build Summary
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, docker]
+    if: always()
+    
+    steps:
+    - name: 📊 Complete Build Status Summary
+      run: |
+        echo "## 🚀 Complete Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Component | Status | Branch |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 🏗️ Backend (.NET) | ${{ needs.backend.result }} | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🌐 Frontend (Angular) | ${{ needs.frontend.result }} | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🐳 Docker Images | ${{ needs.docker.result }} | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "**PR:** #${{ github.event.number }} - ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [ "${{ needs.docker.result }}" = "success" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🐳 Published Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: \`ghcr.io/${{ github.repository }}/expense-tracker-backend:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: \`ghcr.io/${{ github.repository }}/expense-tracker-frontend:latest\`" >> $GITHUB_STEP_SUMMARY
+        fi

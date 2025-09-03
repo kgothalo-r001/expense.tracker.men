@@ -1,0 +1,40 @@
+# Build artifacts
+bin/
+obj/
+out/
+
+# Dependencies
+packages/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# User secrets
+appsettings.Development.json
+*.user
+
+# Logs
+logs/
+*.log
+
+# Test results
+TestResults/
+
+# Coverage
+coverage/
