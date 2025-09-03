@@ -11,8 +11,8 @@ COPY . .
 # Install & Build Abstractions
 RUN if [ -d "abstractions" ]; then \
     echo "Building abstractions..."; \
-    cd "abstractions" && \
-    npm ci && \
+  cd "abstractions" && \
+  npm install && \
     npm run build; \
     echo "Abstractions built successfully"; \
   fi
@@ -20,8 +20,8 @@ RUN if [ -d "abstractions" ]; then \
 # Install Business dependencies first
 RUN if [ -d "business" ]; then \
     echo "Installing business dependencies..."; \
-    cd "business" && \
-    npm ci; \
+  cd "business" && \
+  npm install; \
   fi
 
 # Create auto-generated directories to prevent build failures
@@ -44,8 +44,8 @@ RUN if [ -d "business" ]; then \
 # Install & Build Main Application
 RUN if [ -d "expense.tracker.main" ]; then \
     echo "Building main application..."; \
-    cd "expense.tracker.main" && \
-    npm ci && \
+  cd "expense.tracker.main" && \
+  npm install && \
     (npm run genClient && echo "Client generated successfully") || echo "Client generation failed, continuing..." && \
     npm run build -- --configuration production; \
     echo "Main application built successfully"; \
