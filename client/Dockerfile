@@ -6,12 +6,16 @@ WORKDIR /app
 RUN dotnet tool install --global NSwag.ConsoleCore
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Build stage
-FROM node:20-alpine AS build
+# Build stage: include .NET SDK, Node.js, npm and NSwag
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 WORKDIR /app
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl, Node.js and npm
+RUN apk add --no-cache curl nodejs npm
+
+# Install NSwag CLI in build stage
+RUN dotnet tool install --global NSwag.ConsoleCore
+ENV PATH="$PATH:/root/.dotnet/tools"
 
 # Copy Workspace
 COPY . .
