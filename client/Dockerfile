@@ -58,7 +58,7 @@ FROM nginx:alpine AS production
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application
-COPY --from=build /client/expense.tracker.main/dist/expense.tracker.main/ /usr/share/nginx/html/
+COPY --from=build /client/expense.tracker.main/dist/expense.tracker.main/* /usr/share/nginx/html/
 
 # Expose port
 EXPOSE 80
