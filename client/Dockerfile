@@ -1,3 +1,11 @@
+# Setup .NET for genClient
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet
+WORKDIR /app
+
+# Install NSwag CLI
+RUN dotnet tool install --global NSwag.ConsoleCore
+ENV PATH="$PATH:/root/.dotnet/tools"
+
 # Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
@@ -17,29 +25,14 @@ RUN if [ -d "abstractions" ]; then \
     echo "Abstractions built successfully"; \
   fi
 
-# Install Business dependencies first
+# Install Business # Build Business
 RUN if [ -d "business" ]; then \
-    echo "Installing business dependencies..."; \
+    echo "Building business..."; \
     cd business && \
-    npm install; \
-  fi
-
-# Create auto-generated directories to prevent build failures
-RUN if [ -d "business" ]; then \
-    mkdir -p business/auto/autobusinessclient && \
-    cp business/fallback-client.ts business/auto/autobusinessclient/index.ts; \
-  fi
-
-# Build Business (with fallback client)
-RUN if [ -d "business" ]; then \
-  echo "Building business layer..."; \
-  cd business && \
-    (npm run genClient && echo "Client generated successfully") || \
-    (echo "Client generation failed, using fallback" && \
-     cp fallback-client.ts auto/autobusinessclient/index.ts) && \
+    npm install && \
     npm run build && \
-    echo "Business layer built successfully"; \
-  fi  
+    echo "Business built successfully"; \
+  fi 
 
 # Install & Build Main Application
 RUN if [ -d "expense.tracker.main" ]; then \

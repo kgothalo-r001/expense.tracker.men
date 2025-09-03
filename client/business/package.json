@@ -5,8 +5,7 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "prebuild": "mkdir -p auto/autobusinessclient || true",
-    "build": "(npm run genClient || echo 'Using fallback client') && tsc",
+    "build": "npm run genClient && tsc",
     "genClient": "nswag run nswag.json && node override.cjs",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
