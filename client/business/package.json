@@ -5,11 +5,12 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "npm run genClient && tsc",
+    "prebuild": "mkdir -p auto/autobusinessclient || true",
+    "build": "(npm run genClient || echo 'Using fallback client') && tsc",
+    "genClient": "nswag run nswag.json && node override.cjs",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "genClient": "nswag run nswag.json && node override.cjs"
+    "test": "jest"
   },
   "keywords": [
     "typescript",

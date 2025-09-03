@@ -6,7 +6,6 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
@@ -16,7 +15,7 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "noEmit": true
+    "noEmit": false
   },
   "include": [
     "**/*.ts"
